@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
+    <title>Admin Panel - Database Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class', // <-- ADDED FOR DARK MODE
+            theme: {
+                extend: {
+                    colors: {
+                        'wise-bright-green': '#9FE870',
+                        'wise-forest-green': '#163300',
+                        'wise-light-bg': '#F4F7F4',
+                        'wise-dark-green': '#0A1A00',
+                        'wise-medium-green': '#2A5500',
+                        'wise-text-light': '#E8F5E0',
+                        'wise-text-secondary': '#B8D9A8',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <script>
+        (function() {
+            if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        })();
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #F5F5F5;
+            color: #333;
+            overflow-x: hidden;
+        }
+        
+        .sidebar {
+            transition: all 0.3s ease;
+            background-color: #FFFFFF;
+            border-right: 1px solid #E0E0E0;
+            height: 100vh;
+            overflow-y: auto;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 40;
+            width: 200px;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: #F5F5F5;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: #9FE870;
+            border-radius: 3px;
+        }
+        
+        .content-area {
+            transition: all 0.3s ease;
+            background-color: #F5F5F5;
+            margin-left: 200px;
+            min-height: 100vh;
+        }
+        
+        @media (max-width: 1023px) {
+            .sidebar {
+                transform: translateX(-100%);
+                width: 280px;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            }
+
+            .content-area {
+                margin-left: 0;
+            }
+
+            .mobile-overlay {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background-color: rgba(0, 0, 0, 0.5);
+                z-index: 39;
+            }
+
+            .mobile-overlay.active {
+                display: block;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .sidebar {
+                width: 100%;
+                max-width: 280px;
+            }
+        }
+        
+        /* Table - Fully responsive without scrolling */
+        .table-container {
+            overflow: visible;
+            border-radius: 8px;
+            width: 100%;
+        }
+        
+        table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+        }
+
+        table th,
+        table td {
+            padding: 0.75rem;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        /* ID column - narrower */
+        table th:first-child,
+        table td:first-child {
+            width: 60px;
+            min-width: 60px;
+        }
+
+        /* Actions column - narrower */
+        table th:last-child,
+        table td:last-child {
+            width: 100px;
+            min-width: 100px;
+        }
+        
+        table tbody tr {
+            background-color: #FFFFFF;
+            border-bottom: 1px solid #E0E0E0;
+        }
+        
+        table tbody tr:hover {
+            background-color: #F9F9F9;
+        }
+        
+        table thead {
+            background-color: #F5F5F5;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        table thead th {
+            color: #666;
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        table td {
+            color: #333;
+            font-size: 0.875rem;
+            vertical-align: top;
+        }
+
+        /* Expandable cell styling */
+        .expandable-cell {
+            cursor: pointer;
+            position: relative;
+            transition: background-color 0.2s;
+        }
+
+        .expandable-cell.expanded {
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        .expandable-cell:not(.expanded) {
+            max-height: 3em;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .expandable-cell:hover {
+            background-color: rgba(159, 232, 112, 0.1);
+        }
+
+        .expand-indicator {
+            color: #9FE870;
+            font-weight: bold;
+            margin-left: 4px;
+        }
+
+        /* Mobile responsive table */
+        @media (max-width: 768px) {
+            table {
+                font-size: 0.75rem;
+            }
+
+            table th,
+            table td {
+                padding: 0.5rem;
+            }
+
+            table th:first-child,
+            table td:first-child {
+                width: 50px;
+                min-width: 50px;
+            }
+
+            table th:last-child,
+            table td:last-child {
+                width: 80px;
+                min-width: 80px;
+            }
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.3s;
+            padding: 1rem;
+            overflow-y: auto;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .modal-content {
+            animation: slideIn 0.3s;
+            background-color: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        @media (max-width: 640px) {
+            .modal-content {
+                padding: 1.5rem !important;
+                margin: 1rem;
+            }
+
+            .modal h3 {
+                font-size: 1.25rem !important;
+            }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Large Dashboard Cards */
+        .dashboard-stat-card {
+            background: linear-gradient(135deg, #9FE870 0%, #8AD95E 100%);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s;
+            cursor: pointer;
+            min-height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        .dashboard-stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(159, 232, 112, 0.3);
+        }
+
+        .dashboard-stat-card .icon {
+            font-size: 2.5rem;
+            color: rgba(0, 0, 0, 0.2);
+            margin-bottom: 1rem;
+        }
+
+        .dashboard-stat-card .number {
+            font-size: 3rem;
+            font-weight: 800;
+            color: #000;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+        }
+
+        .dashboard-stat-card .label {
+            font-size: 0.9rem;
+            color: rgba(0, 0, 0, 0.6);
+            font-weight: 500;
+        }
+
+        .dashboard-stat-card .status {
+            font-size: 0.75rem;
+            color: rgba(0, 0, 0, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.25rem;
+        }
+
+        @media (max-width: 640px) {
+            .dashboard-stat-card {
+                padding: 1.5rem;
+                min-height: 150px;
+            }
+
+            .dashboard-stat-card .number {
+                font-size: 2.5rem;
+            }
+
+            .dashboard-stat-card .icon {
+                font-size: 2rem;
+            }
+        }
+        
+        .btn-action {
+            transition: all 0.2s;
+            padding: 0.5rem;
+            font-size: 1rem;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.1);
+        }
+
+        @media (max-width: 640px) {
+            .btn-action {
+                padding: 0.4rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(159, 232, 112, 0.3);
+            border-radius: 50%;
+            border-top-color: #9FE870;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .password-toggle {
+            cursor: pointer;
+            transition: color 0.2s;
+            color: #999;
+        }
+
+        .password-toggle:hover {
+            color: #9FE870;
+        }
+
+        .password-cell {
+            position: relative;
+        }
+
+        .password-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Form inputs theming */
+        input:not([type="checkbox"]):not([type="radio"]), 
+        select, 
+        textarea {
+            background-color: #FFFFFF !important;
+            border: 1px solid #E0E0E0 !important;
+            color: #333 !important;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: #9FE870 !important;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(159, 232, 112, 0.2) !important;
+        }
+
+        input::placeholder, textarea::placeholder {
+            color: #999 !important;
+        }
+
+        /* Button theming */
+        .bg-indigo-500, .bg-indigo-600 {
+            background-color: #9FE870 !important;
+            color: #000 !important;
+        }
+
+        .bg-indigo-500:hover, .bg-indigo-600:hover {
+            background-color: #8AD95E !important;
+        }
+
+        .text-indigo-600 {
+            color: #9FE870 !important;
+        }
+
+        .border-indigo-500 {
+            border-color: #9FE870 !important;
+        }
+
+        /* Background theming */
+        .bg-white {
+            background-color: #FFFFFF !important;
+        }
+
+        .bg-gray-50, .bg-gray-100 {
+            background-color: #F5F5F5 !important;
+        }
+
+        .bg-gray-200 {
+            background-color: #E0E0E0 !important;
+        }
+
+        /* Text theming */
+        .text-gray-700, .text-gray-800, .text-gray-900 {
+            color: #333 !important;
+        }
+
+        .text-gray-500, .text-gray-600 {
+            color: #666 !important;
+        }
+
+        /* Border theming */
+        .border-gray-200, .border-gray-300 {
+            border-color: #E0E0E0 !important;
+        }
+
+        /* Logo styling */
+        .logo-section {
+            background-color: #9FE870;
+            padding: 1.5rem 1rem;
+            border-radius: 12px;
+            margin: 1rem;
+        }
+
+        .logo-title {
+            color: #000;
+            font-weight: 800;
+            font-size: 1.25rem;
+        }
+
+        .logo-subtitle {
+            color: rgba(0, 0, 0, 0.6);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Chart container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background-color: #FFFFFF;
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid #E0E0E0;
+        }
+
+        @media (max-width: 640px) {
+            .chart-container {
+                height: 250px;
+                padding: 1rem;
+            }
+        }
+
+        /* Navigation */
+        .nav-link {
+            color: #666;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .nav-link:hover {
+            background-color: #F5F5F5 !important;
+            color: #333;
+        }
+
+        .nav-link.active {
+            background-color: #9FE870 !important;
+            color: #000 !important;
+            border-left-color: #000;
+            font-weight: 600;
+        }
+
+        .nav-link i {
+            color: inherit;
+        }
+
+        /* Red button override */
+        .bg-red-500 {
+            background-color: #DC2626 !important;
+            color: #FFFFFF !important;
+        }
+
+        .bg-red-500:hover {
+            background-color: #B91C1C !important;
+        }
+
+        /* Info card */
+        .info-card {
+            background-color: #FFFFFF;
+            border: 1px solid #E0E0E0;
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .info-card:hover {
+            border-color: #9FE870;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .content-area {
+                padding: 1rem !important;
+            }
+
+            #tableSection {
+                padding: 1rem !important;
+            }
+        }
+
+        /* Header notification bell */
+        .notification-bell {
+            position: relative;
+            cursor: pointer;
+        }
+
+        .notification-bell .badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background-color: #DC2626;
+            color: white;
+            border-radius: 50%;
+            width: 8px;
+            height: 8px;
+        }
+
+        /* --- Dark Mode Styles --- */
+        .dark body {
+            background-color: #121212;
+            color: #E0E0E0;
+        }
+        .dark .sidebar {
+            background-color: #1E1E1E;
+            border-right: 1px solid #333333;
+        }
+        .dark .sidebar::-webkit-scrollbar-track {
+            background: #1E1E1E;
+        }
+        .dark .content-area {
+            background-color: #121212;
+        }
+        
+        /* Theming overrides */
+        .dark .bg-white { background-color: #1E1E1E !important; }
+        .dark .bg-gray-50, .dark .bg-gray-100 { background-color: #121212 !important; }
+        .dark .bg-gray-200 { background-color: #333333 !important; }
+        .dark .border-gray-200, .dark .border-gray-300 { border-color: #333333 !important; }
+
+        .dark .text-gray-900, .dark .text-gray-800, .dark .text-gray-700 { color: #F5F5F5 !important; }
+        .dark .text-gray-600, .dark .text-gray-500 { color: #AAAAAA !important; }
+
+        /* Custom components */
+        .dark .logo-section {
+            background-color: #1E1E1E;
+            border: 1px solid #333;
+        }
+        .dark .logo-title { color: #9FE870; }
+        .dark .logo-subtitle { color: #888; }
+        
+        .dark .nav-link { color: #AAAAAA; }
+        .dark .nav-link:hover { background-color: #333333 !important; color: #F5F5F5; }
+        .dark .nav-link.active {
+            background-color: #9FE870 !important;
+            color: #000 !important;
+            border-left-color: #000;
+        }
+        
+        .dark #menuToggle {
+             background-color: #1E1E1E;
+             color: #9FE870;
+             border: 1px solid #333;
+        }
+        
+        .dark .notification-bell .fa-bell { color: #AAAAAA; }
+
+        /* Dashboard Cards */
+        .dark .dashboard-stat-card {
+            background: linear-gradient(135deg, #1A4A00 0%, #0A2A00 100%);
+            border: 1px solid #2A5500;
+        }
+        .dark .dashboard-stat-card:hover {
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            border-color: #9FE870;
+        }
+        .dark .dashboard-stat-card .icon { color: rgba(159, 232, 112, 0.2); }
+        .dark .dashboard-stat-card .number { color: #FFFFFF; }
+        .dark .dashboard-stat-card .label { color: rgba(255, 255, 255, 0.6); }
+        .dark .dashboard-stat-card .status { color: rgba(255, 255, 255, 0.5); }
+
+        /* Charts & Info Cards */
+        .dark .info-card {
+            background-color: #1E1E1E;
+            border: 1px solid #333333;
+        }
+        .dark .info-card:hover { border-color: #9FE870; }
+        .dark .chart-container {
+            background-color: #1E1E1E;
+            border: 1px solid #333333;
+        }
+        .dark .p-4.rounded-lg[style*="#F5F5F5"] { /* Target system overview boxes */
+            background-color: #121212 !important;
+            border: 1px solid #333 !important;
+        }
+
+        /* Table */
+        .dark table thead { background-color: #121212; }
+        .dark table thead th { color: #AAAAAA; }
+        .dark table tbody tr {
+            background-color: #1E1E1E;
+            border-bottom: 1px solid #333333;
+        }
+        .dark table tbody tr:hover { background-color: #252525; }
+        .dark table td { color: #E0E0E0; }
+        .dark .expandable-cell:hover { background-color: rgba(159, 232, 112, 0.05); }
+
+        /* Modal */
+        .dark .modal-content {
+            background-color: #1E1E1E;
+            border: 1px solid #333333;
+        }
+        .dark .modal h3 { color: #F5F5F5; }
+        .dark .modal button[onclick="closeModal()"] { color: #888; }
+        .dark .modal button[onclick="closeModal()"]:hover { color: #DDD; }
+        
+        /* Forms */
+        .dark input:not([type="checkbox"]):not([type="radio"]), 
+        .dark select, 
+        .dark textarea {
+            background-color: #121212 !important;
+            border: 1px solid #333333 !important;
+            color: #E0E0E0 !important;
+        }
+        .dark input:focus, .dark select:focus, .dark textarea:focus {
+            border-color: #9FE870 !important;
+            box-shadow: 0 0 0 2px rgba(159, 232, 112, 0.2) !important;
+        }
+        .dark input::placeholder, .dark textarea::placeholder {
+            color: #666 !important;
+        }
+        .dark .password-toggle { color: #666; }
+        .dark .password-toggle:hover { color: #9FE870; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div id="mobileOverlay" class="mobile-overlay"></div>
+
+    <button id="menuToggle" class="lg:hidden fixed top-4 left-4 z-50 text-white p-3 rounded-lg shadow-lg transition-colors" style="background-color: #9FE870; color: #000;">
+        <i class="fas fa-bars text-xl"></i>
+    </button>
+
+    <div class="flex min-h-screen">
+        <aside id="sidebar" class="sidebar">
+            <div class="logo-section">
+                <h2 class="logo-title">Admin Panel</h2>
+                <p class="logo-subtitle">Database Manager</p>
+            </div>
+            
+            <nav class="mt-6 px-3 space-y-1">
+                <button onclick="showSection('dashboard')" data-table="dashboard" class="nav-link active w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left">
+                    <i class="fas fa-home w-5"></i>
+                    <span class="font-semibold text-sm">Dashboard</span>
+                </button>
+                <button onclick="showSection('notifications')" data-table="notifications" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left">
+                    <i class="fas fa-bell w-5"></i>
+                    <span class="font-semibold text-sm">NotifyMe!</span>
+                </button>
+                <button onclick="showSection('members')" data-table="members" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left">
+                    <i class="fas fa-users w-5"></i>
+                    <span class="font-semibold text-sm">Members</span>
+                </button>
+                <button onclick="showSection('admins')" data-table="admins" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left">
+                    <i class="fas fa-user-shield w-5"></i>
+                    <span class="font-semibold text-sm">Administrators</span>
+                </button>
+                <button onclick="showSection('announcements')" data-table="announcements" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left">
+                    <i class="fas fa-bullhorn w-5"></i>
+                    <span class="font-semibold text-sm">Announcements</span>
+                </button>
+            </nav>
+            
+            <div class="mt-auto px-3 space-y-2 pb-4 pt-6">
+                <button onclick="logout()" class="w-full bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 text-sm">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 content-area p-6 lg:p-8 overflow-auto">
+            <div class="mb-8 flex justify-between items-center pt-12 lg:pt-0">
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-800" id="pageTitle">Dashboard</h1>
+                </div>
+                <div class="flex items-center gap-6">
+                    <button id="themeToggle" class="text-2xl text-gray-600 transition-colors">
+                        <i class="fas fa-moon"></i> </button>
+                    <div class="notification-bell">
+                        <i class="fas fa-bell text-2xl text-gray-600"></i>
+                        <span class="badge"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tableSection">
+                </div>
+        </main>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content rounded-xl p-6 sm:p-8 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h3 id="modalTitle" class="text-2xl font-bold text-gray-800"></h3>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
+            </div>
+            <form id="modalForm" class="space-y-4">
+                </form>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://dqtictujkhxultwoaqaw.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdGljdHVqa2h4dWx0d29hcWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTU1MjksImV4cCI6MjA3Mzg3MTUyOX0.DsnJZ9ylCBlTeVp_KdgRq71cV0f7MojOfuWg1MVGS5I';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Global variables
+        let currentTable = 'dashboard';
+        let currentData = [];
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let charts = {};
+
+        // Mobile menu toggle
+        document.getElementById('menuToggle').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+        });
+
+        document.getElementById('mobileOverlay').addEventListener('click', () => {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobileOverlay');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        });
+
+        // Truncate text function
+        function truncateText(text, maxLength = 100) {
+            if (!text) return '';
+            const textStr = String(text);
+            if (textStr.length <= maxLength) return textStr;
+            return textStr.substring(0, maxLength) + '...';
+        }
+
+        // Toggle cell expansion
+        function toggleCellExpansion(element) {
+            element.classList.toggle('expanded');
+            const fullText = element.getAttribute('data-full-text');
+            const truncatedText = element.getAttribute('data-truncated-text');
+            
+            if (element.classList.contains('expanded')) {
+                element.textContent = fullText;
+            } else {
+                element.innerHTML = truncatedText + '<span class="expand-indicator">⋯</span>';
+            }
+        }
+
+        // Load counts on page load
+        async function loadCounts() {
+            try {
+                const tables = ['notifications', 'members', 'announcements', 'admin_user', 'admins'];
+                const counts = {};
+
+                for (const table of tables) {
+                    const { count, error } = await supabase
+                        .from(table)
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (!error) {
+                        counts[table] = count || 0;
+                    }
+                }
+
+                return counts;
+            } catch (error) {
+                console.error('Error loading counts:', error);
+                return {};
+            }
+        }
+
+        // Navigate to section from dashboard cards - NEW
+        function navigateToSection(tableName) {
+            // Update active nav - highlight the corresponding navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('data-table') === tableName) {
+                    link.classList.add('active');
+                }
+            });
+
+            // Set current table
+            currentTable = tableName;
+            currentPage = 1;
+
+            // Navigate to the section
+            if (tableName === 'dashboard') {
+                showDashboard();
+            } else {
+                document.getElementById('pageTitle').textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1).replace('_', ' ');
+                loadTableData();
+            }
+
+            // Close mobile menu if open
+            if (window.innerWidth < 1024) {
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('mobileOverlay').classList.remove('active');
+            }
+        }
+
+        // Show Dashboard
+        async function showDashboard() {
+            document.getElementById('pageTitle').textContent = 'Dashboard';
+
+            const tableSection = document.getElementById('tableSection');
+            tableSection.innerHTML = '<div class="text-center py-8"><div class="loading mx-auto"></div></div>';
+
+            const counts = await loadCounts();
+
+            const dashboardHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="dashboard-stat-card" onclick="navigateToSection('members')">
+                        <div>
+                            <div class="icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="status">Total</div>
+                            <div class="number">${counts.members || 0}</div>
+                            <div class="label">Active Members</div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-stat-card" onclick="navigateToSection('admins')">
+                        <div>
+                            <div class="icon">
+                                <i class="fas fa-user-shield"></i>
+                            </div>
+                            <div class="status">Total</div>
+                            <div class="number">${counts.admins || 0}</div>
+                            <div class="label">Administrators</div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-stat-card" onclick="navigateToSection('announcements')">
+                        <div>
+                            <div class="icon">
+                                <i class="fas fa-bullhorn"></i>
+                            </div>
+                            <div class="status">Active</div>
+                            <div class="number">${counts.announcements || 0}</div>
+                            <div class="label">Announcements</div>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-stat-card" onclick="navigateToSection('notifications')">
+                        <div>
+                            <div class="icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="status">Total</div>
+                            <div class="number">${counts.notifications || 0}</div>
+                            <div class="label">NotifyMe!</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="info-card">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Database Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="pieChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Records Overview</h3>
+                        <div class="chart-container">
+                            <canvas id="barChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-info-circle mr-2" style="color: #9FE870;"></i>
+                        System Overview
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="p-4 rounded-lg" style="background-color: #F5F5F5; border: 1px solid #E0E0E0;">
+                            <p class="text-sm text-gray-600 mb-1">Total Records</p>
+                            <p class="text-2xl font-bold" style="color: #9FE870;">${Object.values(counts).reduce((a, b) => a + b, 0)}</p>
+                        </div>
+                        <div class="p-4 rounded-lg" style="background-color: #F5F5F5; border: 1px solid #E0E0E0;">
+                            <p class="text-sm text-gray-600 mb-1">Active Tables</p>
+                            <p class="text-2xl font-bold" style="color: #9FE870;">4</p>
+                        </div>
+                        <div class="p-4 rounded-lg" style="background-color: #F5F5F5; border: 1px solid #E0E0E0;">
+                            <p class="text-sm text-gray-600 mb-1">System Status</p>
+                            <p class="text-2xl font-bold" style="color: #9FE870;">Active</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            tableSection.innerHTML = dashboardHTML;
+
+            // Destroy existing charts
+            Object.values(charts).forEach(chart => chart.destroy());
+            charts = {};
+            
+            // Get current theme options for charts
+            const chartThemeOptions = getChartThemeOptions();
+
+            // Create Pie Chart with different colors
+            const pieCtx = document.getElementById('pieChart');
+            if (pieCtx) {
+                charts.pie = new Chart(pieCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Members', 'Admins', 'Announcements', 'Notifications'],
+                        datasets: [{
+                            data: [
+                                counts.members || 0,
+                                counts.admins || 0,
+                                counts.announcements || 0,
+                                counts.notifications || 0,
+                                counts.admin_user || 0
+                            ],
+                            backgroundColor: [
+                                '#FF6B6B',  // Red
+                                '#4ECDC4',  // Teal
+                                '#FFE66D',  // Yellow
+                                '#95E1D3',  // Mint
+                                '#A8E6CF'   // Light green
+                            ],
+                            borderColor: document.documentElement.classList.contains('dark') ? '#1E1E1E' : '#FFFFFF',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { // UPDATED
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: chartThemeOptions.plugins.legend
+                        }
+                    }
+                });
+            }
+
+            // Create Bar Chart
+            const barCtx = document.getElementById('barChart');
+            if (barCtx) {
+                charts.bar = new Chart(barCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Members', 'Admins', 'Announcements', 'Notifications'],
+                        datasets: [{
+                            label: 'Number of Records',
+                            data: [
+                                counts.members || 0,
+                                counts.admins || 0,
+                                counts.announcements || 0,
+                                counts.notifications || 0,
+                                counts.admin_user || 0
+                            ],
+                            backgroundColor: '#9FE870',
+                            borderColor: '#8AD95E',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: { // UPDATED
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: chartThemeOptions.scales,
+                        plugins: {
+                            legend: chartThemeOptions.plugins.legend
+                        }
+                    }
+                });
+            }
+        }
+
+        // Show section
+        async function showSection(tableName) {
+            currentTable = tableName;
+            currentPage = 1;
+            
+            // Update active nav
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            const clickedLink = event?.target?.closest('.nav-link');
+            if (clickedLink) {
+                clickedLink.classList.add('active');
+            } else {
+                // If called programmatically, find and activate the nav link
+                const navLink = document.querySelector(`.nav-link[data-table="${tableName}"]`);
+                if (navLink) {
+                    navLink.classList.add('active');
+                }
+            }
+
+            // Close mobile menu
+            if (window.innerWidth < 1024) {
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('mobileOverlay').classList.remove('active');
+            }
+
+            if (tableName === 'dashboard') {
+                await showDashboard();
+            } else {
+                document.getElementById('pageTitle').textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1).replace('_', ' ');
+                await loadTableData();
+            }
+        }
+
+        // Load table data
+        async function loadTableData() {
+            try {
+                const tableSection = document.getElementById('tableSection');
+                tableSection.innerHTML = '<div class="text-center py-8"><div class="loading mx-auto"></div></div>';
+
+                const { data, error, count } = await supabase
+                    .from(currentTable)
+                    .select('*', { count: 'exact' })
+                    .order('id', { ascending: true });
+
+                if (error) throw error;
+
+                currentData = data || [];
+                const totalPages = Math.ceil((count || 0) / itemsPerPage);
+
+                renderTable(totalPages);
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('tableSection').innerHTML = 
+                    '<div class="text-center text-red-500 py-8">Error loading data. Please try again.</div>';
+            }
+        }
+
+        // Render table with expandable cells
+        function renderTable(totalPages) {
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageData = currentData.slice(startIndex, endIndex);
+
+            let tableHTML = `
+                <div class="bg-white rounded-xl shadow p-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800 capitalize">${currentTable.replace('_', ' ')}</h2>
+                        <button onclick="openAddModal()" class="w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2" style="background-color: #9FE870; color: #000;">
+                            <i class="fas fa-plus"></i>
+                            <span>Add New</span>
+                        </button>
+                    </div>
+                    <div class="table-container">
+                        <table class="w-full">
+                            <thead>
+                                <tr>
+            `;
+
+            // Generate table headers
+            if (pageData.length > 0) {
+                Object.keys(pageData[0]).forEach(key => {
+                    tableHTML += `<th class="px-4 py-3 text-left">${key.toUpperCase()}</th>`;
+                });
+                tableHTML += '<th class="px-4 py-3 text-left">ACTIONS</th>';
+            }
+
+            tableHTML += `
+                                </tr>
+                            </thead>
+                            <tbody>
+            `;
+
+            // Generate table rows with expandable cells
+            pageData.forEach(row => {
+                tableHTML += '<tr>';
+                Object.entries(row).forEach(([key, value]) => {
+                    if (key.toLowerCase().includes('password')) {
+                        tableHTML += `
+                            <td class="px-4 py-3 password-cell">
+                                <div class="password-display">
+                                    <span class="password-text-${row.id}">••••••••</span>
+                                    <i class="fas fa-eye password-toggle" onclick="togglePassword(${row.id}, '${value ? String(value).replace(/'/g, "\\'") : ''}')"></i>
+                                </div>
+                            </td>
+                        `;
+                    } else {
+                        const fullText = value !== null ? String(value) : '';
+                        const truncated = truncateText(fullText, 100);
+                        const needsTruncation = fullText.length > 100;
+                        
+                        if (needsTruncation) {
+                            tableHTML += `
+                                <td class="px-4 py-3 expandable-cell" 
+                                    onclick="toggleCellExpansion(this)"
+                                    data-full-text="${fullText.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
+                                    data-truncated-text="${truncated.replace('...', '').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
+                                    title="Click to expand/collapse">
+                                    ${truncated}<span class="expand-indicator">⋯</span>
+                                </td>
+                            `;
+                        } else {
+                            tableHTML += `<td class="px-4 py-3">${fullText}</td>`;
+                        }
+                    }
+                });
+                tableHTML += `
+                    <td class="px-4 py-3">
+                        <div class="flex gap-2 justify-start">
+                            <button onclick="openEditModal(${row.id})" class="btn-action hover:text-blue-600" style="color: #9FE870;" title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteRow(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Delete">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                `;
+            });
+
+            tableHTML += `
+                            </tbody>
+                        </table>
+                    </div>
+            `;
+
+            // Pagination
+            if (totalPages > 1) {
+                tableHTML += `
+                    <div class="mt-6 flex justify-center items-center gap-2 flex-wrap">
+                        <button onclick="changePage(${currentPage - 1})" 
+                                ${currentPage === 1 ? 'disabled' : ''} 
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <span class="px-4 py-2 text-gray-700 font-semibold">Page ${currentPage} of ${totalPages}</span>
+                        <button onclick="changePage(${currentPage + 1})" 
+                                ${currentPage === totalPages ? 'disabled' : ''} 
+                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                `;
+            }
+
+            tableHTML += '</div>';
+
+            document.getElementById('tableSection').innerHTML = tableHTML;
+        }
+
+        // Toggle password visibility
+        function togglePassword(id, realPassword) {
+            const textElement = document.querySelector(`.password-text-${id}`);
+            const icon = event.target;
+            
+            if (textElement.textContent === '••••••••') {
+                textElement.textContent = realPassword;
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                textElement.textContent = '••••••••';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Change page
+        function changePage(page) {
+            const totalPages = Math.ceil(currentData.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            renderTable(totalPages);
+        }
+
+        // Open add modal
+        function openAddModal() {
+            document.getElementById('modalTitle').textContent = `Add New ${currentTable.replace('_', ' ')}`;
+            const form = document.getElementById('modalForm');
+            form.innerHTML = '';
+
+            if (currentData.length > 0) {
+                const sample = currentData[0];
+                Object.keys(sample).forEach(key => {
+                    if (key !== 'id') {
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <input type="${key.toLowerCase().includes('password') ? 'password' : 'text'}" 
+                                       name="${key}" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                                       ${key.toLowerCase().includes('email') ? 'type="email"' : ''}>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            form.innerHTML += `
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="saveNew()" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-colors" style="background-color: #9FE870; color: #000;">
+                        Save
+                    </button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('modal').classList.add('active');
+        }
+
+        // Open edit modal
+        function openEditModal(id) {
+            const row = currentData.find(r => r.id === id);
+            if (!row) return;
+
+            document.getElementById('modalTitle').textContent = `Edit ${currentTable.replace('_', ' ')}`;
+            const form = document.getElementById('modalForm');
+            form.innerHTML = '';
+
+            Object.entries(row).forEach(([key, value]) => {
+                if (key !== 'id') {
+                    form.innerHTML += `
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                            <input type="${key.toLowerCase().includes('password') ? 'password' : 'text'}" 
+                                   name="${key}" 
+                                   value="${value !== null ? value : ''}"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                                   ${key.toLowerCase().includes('email') ? 'type="email"' : ''}>
+                        </div>
+                    `;
+                }
+            });
+
+            form.innerHTML += `
+                <input type="hidden" name="id" value="${id}">
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="saveEdit()" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-colors" style="background-color: #9FE870; color: #000;">
+                        Update
+                    </button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            `;
+
+            document.getElementById('modal').classList.add('active');
+        }
+
+        // Save new entry
+        async function saveNew() {
+            try {
+                const form = document.getElementById('modalForm');
+                const formData = new FormData(form);
+                const data = {};
+                
+                formData.forEach((value, key) => {
+                    data[key] = value;
+                });
+
+                const { error } = await supabase
+                    .from(currentTable)
+                    .insert([data]);
+
+                if (error) throw error;
+
+                closeModal();
+                await loadTableData();
+                alert('Record added successfully!');
+            } catch (error) {
+                console.error('Error saving:', error);
+                alert('Error saving record. Please try again.');
+            }
+        }
+
+        // Save edit
+        async function saveEdit() {
+            try {
+                const form = document.getElementById('modalForm');
+                const formData = new FormData(form);
+                const data = {};
+                let id;
+                
+                formData.forEach((value, key) => {
+                    if (key === 'id') {
+                        id = parseInt(value);
+                    } else {
+                        data[key] = value;
+                    }
+                });
+
+                const { error } = await supabase
+                    .from(currentTable)
+                    .update(data)
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                closeModal();
+                await loadTableData();
+                alert('Record updated successfully!');
+            } catch (error) {
+                console.error('Error updating:', error);
+                alert('Error updating record. Please try again.');
+            }
+        }
+
+        // Delete row
+        async function deleteRow(id) {
+            if (!confirm('Are you sure you want to delete this record?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from(currentTable)
+                    .delete()
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadTableData();
+                alert('Record deleted successfully!');
+            } catch (error) {
+                console.error('Error deleting:', error);
+                alert('Error deleting record. Please try again.');
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                window.location.href = 'admin_dashboard.html';
+            }
+        }
+        
+        // --- ADDED: Dark Mode Toggle Functionality ---
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = themeToggle.querySelector('i');
+
+        function setIcon(isDark) {
+            if (isDark) {
+                themeIcon.classList.remove('fa-moon');
+                themeIcon.classList.add('fa-sun');
+                themeToggle.classList.add('text-yellow-400'); // Sun color
+                themeToggle.classList.remove('text-gray-600');
+            } else {
+                themeIcon.classList.remove('fa-sun');
+                themeIcon.classList.add('fa-moon');
+                themeToggle.classList.remove('text-yellow-400');
+                themeToggle.classList.add('text-gray-600');
+            }
+        }
+
+        function getChartThemeOptions() {
+            const isDark = document.documentElement.classList.contains('dark');
+            const tickColor = isDark ? '#AAAAAA' : '#666';
+            const gridColor = isDark ? '#333333' : '#E0E0E0';
+            const legendColor = isDark ? '#E0E0E0' : '#333';
+
+            return {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { color: tickColor, stepSize: 1 },
+                        grid: { color: gridColor }
+                    },
+                    x: {
+                        ticks: { color: tickColor, font: { size: 10 } },
+                        grid: { color: gridColor }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: legendColor,
+                            padding: 10,
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            };
+        }
+
+        function toggleDarkMode() {
+            const isDark = document.documentElement.classList.toggle('dark');
+            localStorage.theme = isDark ? 'dark' : 'light';
+            setIcon(isDark);
+
+            // Re-render dashboard charts if currently on dashboard
+            if (currentTable === 'dashboard') {
+                showDashboard(); 
+            }
+        }
+
+        themeToggle.addEventListener('click', toggleDarkMode);
+        // --- End Dark Mode ---
+
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Set initial theme icon
+            setIcon(document.documentElement.classList.contains('dark')); 
+            
+            await showDashboard();
+        });
+    </script>
+</body>
+</html>

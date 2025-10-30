@@ -203,7 +203,7 @@
 
     async function loadFaceApiModels() {
       if (!modelsLoaded) {
-        await faceapi.nets.tinyFaceDetector.load('/models/');
+        await faceapi.nets.tinyFaceDetector.load('models/');
         modelsLoaded = true;
       }
     }
@@ -364,3 +364,4 @@
   </script>
 </body>
 </html>
+

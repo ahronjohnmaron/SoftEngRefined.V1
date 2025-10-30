@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Edit Profile with Face Detection</title>
+  <style>
+    .ep-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(25, 32, 45, 0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1001;
+    }
+    .ep-form {
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 6px 38px rgba(44,62,80,0.19);
+      padding: 46px 34px;
+      width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 26px;
+    }
+    .ep-form h2 {
+      font-size: 2rem;
+      color: #2577c3;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    .ep-avatar-box {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+    .ep-avatar {
+      width: 82px;
+      height: 82px;
+      border-radius: 99px;
+      border: 2px solid #e2e2e2;
+      object-fit: cover;
+      background: #f7f8fb;
+    }
+    #editAvatarFile {
+      font-size: 1.1rem;
+      padding: 0;
+    }
+    .avatar-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .avatar-btn {
+      background: #2577c3;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.07rem;
+      padding: 8px 16px;
+      cursor: pointer;
+      margin-top: 4px;
+      transition: background 0.18s;
+    }
+    .avatar-btn:active, .avatar-btn:focus {
+      background: #175689;
+    }
+    .camera-box {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 7px;
+      margin-top: 8px;
+    }
+    video {
+      border-radius: 12px;
+      border: 2px solid #d2dbe5;
+      width: 180px;
+      height: 120px;
+      background: #222;
+      object-fit: cover;
+    }
+    .ep-input, .ep-btn, #editAvatarFile {
+      font-size: 1.23rem;
+      border-radius: 8px;
+      border: 1px solid #d2dbe5;
+      padding: 15px 19px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .ep-input {
+      background: #f8fafd;
+      margin-bottom: 0;
+    }
+    .ep-btn {
+      background: #2577c3;
+      color: #fff;
+      border: none;
+      font-weight: 700;
+      font-size: 1.23rem;
+      transition: background 0.19s;
+      cursor: pointer;
+      margin-top: 7px;
+      padding-top: 16px;
+      padding-bottom: 16px;
+    }
+    .ep-btn:disabled {
+      background: #9ca3af;
+      cursor: default;
+    }
+    .profile-card {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border-radius: 22px;
+      box-shadow: 0 6px 30px rgba(44,62,80,0.1);
+      padding: 30px 28px;
+      width: 440px;
+      gap: 24px;
+      margin: 40px auto 0;
+      font-size: 1.13rem;
+    }
+    .profile-avatar {
+      width: 82px;
+      height: 82px;
+      border-radius: 99px;
+      border: 2px solid #e2e2e2;
+      object-fit: cover;
+      background: #f7f8fb;
+    }
+    .profile-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .profile-label {
+      font-weight: bold;
+      color: #2577c3;
+      margin-right: 6px;
+    }
+    .edit-again-btn {
+      background: #20b16a;
+      color: #fff;
+      font-weight: 600;
+      border-radius: 8px;
+      font-size: 1.07rem;
+      border: none;
+      padding: 12px 24px;
+      margin-left: 10px;
+      cursor: pointer;
+      transition: background 0.18s;
+    }
+    .edit-again-btn:hover {
+      background: #14894d;
+    }
+    #faceApiStatus {
+      text-align: center;
+      font-size: 1.12rem;
+      margin: 20px 0 8px 0;
+      color: #2577c3;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+  </style>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+<body>
+  <div id="faceApiStatus">Loading Face API...</div>
+  <div id="editProfileModal" class="ep-modal">
+    <form id="editProfileForm" class="ep-form" autocomplete="off">
+      <h2>Edit Profile</h2>
+      <div class="ep-avatar-box">
+        <img src="https://via.placeholder.com/82" id="ep-avatar-preview" class="ep-avatar" alt="Avatar"/>
+        <div class="avatar-actions">
+          <input type="file" id="editAvatarFile" accept="image/*"/>
+          <button type="button" class="avatar-btn" id="cameraBtn">Use Camera</button>
+        </div>
+      </div>
+      <div id="cameraArea" class="camera-box" style="display:none;">
+        <video id="cameraPreview" autoplay playsinline></video>
+        <button type="button" class="avatar-btn" id="captureBtn">Capture</button>
+        <button type="button" class="avatar-btn" id="closeCamBtn">Close Camera</button>
+      </div>
+      <input type="text" id="editFullName" placeholder="Full Name" class="ep-input" required="required"/>
+      <input type="email" id="editEmail" placeholder="Email" class="ep-input" required="required"/>
+      <select id="editUserType" class="ep-input">
+        <option value="Student">Student</option>
+        <option value="Faculty">Faculty</option>
+        <option value="Staff">Staff</option>
+      </select>
+      <button type="submit" id="profileSubmitBtn" class="ep-btn">Save Changes</button>
+    </form>
+  </div>
+  <div id="profileDisplay" style="display:none;"></div>
+  <script>
+    let finalAvatarDataUrl = 'https://via.placeholder.com/82';
+    let lastName = '';
+    let lastEmail = '';
+    let lastUserType = 'Student';
+    let stream = null;
+    let modelsLoaded = false;
+
+    async function loadFaceApiModels() {
+      if (!modelsLoaded) {
+        await faceapi.nets.tinyFaceDetector.load('/models/');
+        modelsLoaded = true;
+      }
+    }
+
+    // Face API Loaded Status
+    document.addEventListener('DOMContentLoaded', async function() {
+      if (window.faceapi) {
+        document.getElementById('faceApiStatus').textContent = 'Face API loaded!';
+        document.getElementById('faceApiStatus').style.color = '#20b16a';
+      } else {
+        document.getElementById('faceApiStatus').textContent = 'Face API not loaded!';
+        document.getElementById('faceApiStatus').style.color = '#c0392b';
+      }
+    });
+
+    // File upload with face detection
+    document.getElementById('editAvatarFile').addEventListener('change', async function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async function(evt) {
+        const img = new Image();
+        img.src = evt.target.result;
+        img.onload = async function() {
+          await loadFaceApiModels();
+          const detections = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions());
+          if (detections.length === 0) {
+            alert('No face detected in uploaded image. Please upload a clear photo of your face.');
+            document.getElementById('editAvatarFile').value = '';
+            return;
+          }
+          document.getElementById('ep-avatar-preview').src = evt.target.result;
+          finalAvatarDataUrl = evt.target.result;
+        };
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Camera open
+    document.getElementById('cameraBtn').addEventListener('click', async function() {
+      await loadFaceApiModels();
+      document.getElementById('cameraArea').style.display = '';
+      document.getElementById('cameraBtn').style.display = 'none';
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const video = document.getElementById('cameraPreview');
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Unable to access camera: ' + err.message);
+      }
+    });
+
+    // Camera capture with face detection
+    document.getElementById('captureBtn').addEventListener('click', async function() {
+      const video = document.getElementById('cameraPreview');
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth || 180;
+      canvas.height = video.videoHeight || 120;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      await loadFaceApiModels();
+      const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
+      if (detections.length === 0) {
+        alert('No face detected. Please take a clear photo of your face.');
+        return;
+      }
+      finalAvatarDataUrl = canvas.toDataURL('image/png');
+      document.getElementById('ep-avatar-preview').src = finalAvatarDataUrl;
+      document.getElementById('cameraArea').style.display = 'none';
+      document.getElementById('cameraBtn').style.display = '';
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+    });
+
+    // Close camera preview
+    document.getElementById('closeCamBtn').addEventListener('click', function() {
+      document.getElementById('cameraArea').style.display = 'none';
+      document.getElementById('cameraBtn').style.display = '';
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+    });
+
+    // Form submission
+    document.getElementById('editProfileForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const submitBtn = document.getElementById('profileSubmitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+      const fullName = document.getElementById('editFullName').value.trim();
+      const email = document.getElementById('editEmail').value.trim();
+      const userType = document.getElementById('editUserType').value;
+      try {
+        let avatarUrl = finalAvatarDataUrl;
+        alert('✅ Profile updated successfully!');
+        document.getElementById('editProfileModal').style.display = 'none';
+        showProfile(fullName, email, userType, avatarUrl);
+        lastName = fullName;
+        lastEmail = email;
+        lastUserType = userType;
+        finalAvatarDataUrl = avatarUrl;
+      } catch (error) {
+        alert('Failed to update profile: ' + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save Changes';
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+          stream = null;
+        }
+        document.getElementById('cameraArea').style.display = 'none';
+        document.getElementById('cameraBtn').style.display = '';
+      }
+    });
+
+    function showProfile(name, email, userType, avatarUrl) {
+      const card = `
+        <div class="profile-card">
+          <img src="${avatarUrl}" class="profile-avatar" alt="Avatar"/>
+          <div class="profile-info">
+            <div><span class="profile-label">Name:</span> ${name}</div>
+            <div><span class="profile-label">Email:</span> ${email}</div>
+            <div><span class="profile-label">Type:</span> ${userType}</div>
+          </div>
+          <button class="edit-again-btn" onclick="openEditModal()">Edit Profile</button>
+        </div>
+      `;
+      const profileDiv = document.getElementById('profileDisplay');
+      profileDiv.innerHTML = card;
+      profileDiv.style.display = '';
+    }
+
+    window.openEditModal = function() {
+      document.getElementById('editProfileModal').style.display = '';
+      document.getElementById('profileDisplay').style.display = 'none';
+      document.getElementById('editFullName').value = lastName;
+      document.getElementById('editEmail').value = lastEmail;
+      document.getElementById('editUserType').value = lastUserType;
+      document.getElementById('ep-avatar-preview').src = finalAvatarDataUrl;
+      document.getElementById('editAvatarFile').value = '';
+      document.getElementById('cameraArea').style.display = 'none';
+      document.getElementById('cameraBtn').style.display = '';
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        stream = null;
+      }
+    }
+
+    // Set initial values
+    document.getElementById('editFullName').value = '';
+    document.getElementById('editEmail').value = '';
+    document.getElementById('editUserType').value = 'Student';
+    document.getElementById('ep-avatar-preview').src = finalAvatarDataUrl;
+  </script>
+</body>
+</html>

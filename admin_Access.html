@@ -140,17 +140,25 @@
             word-wrap: break-word;
             overflow-wrap: break-word;
         }
+        
+        /* Number column - narrow */
+        table th.col-number,
+        table td.col-number {
+            width: 50px;
+            min-width: 50px;
+        }
+
 
         /* ID column - narrower */
-        table th:first-child,
-        table td:first-child {
+        table th.col-id,
+        table td.col-id {
             width: 60px;
             min-width: 60px;
         }
 
         /* Actions column - narrower */
-        table th:last-child,
-        table td:last-child {
+        table th.col-actions,
+        table td.col-actions {
             width: 100px;
             min-width: 100px;
         }
@@ -178,6 +186,15 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
+        
+        table thead th.sortable {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        table thead th.sortable:hover {
+            background-color: #E0E0E0;
+        }
+
 
         table td {
             color: #333;
@@ -227,14 +244,20 @@
                 padding: 0.5rem;
             }
 
-            table th:first-child,
-            table td:first-child {
+            table th.col-number,
+            table td.col-number {
+                width: 40px;
+                min-width: 40px;
+            }
+
+            table th.col-id,
+            table td.col-id {
                 width: 50px;
                 min-width: 50px;
             }
 
-            table th:last-child,
-            table td:last-child {
+            table th.col-actions,
+            table td.col-actions {
                 width: 80px;
                 min-width: 80px;
             }
@@ -619,9 +642,9 @@
         }
         
         .dark #menuToggle {
-             background-color: #1E1E1E;
-             color: #9FE870;
-             border: 1px solid #333;
+            background-color: #1E1E1E;
+            color: #9FE870;
+            border: 1px solid #333;
         }
         
         .dark .notification-bell .fa-bell { color: #AAAAAA; }
@@ -658,12 +681,19 @@
         /* Table */
         .dark table thead { background-color: #121212; }
         .dark table thead th { color: #AAAAAA; }
+        .dark table thead th.sortable:hover {
+            background-color: #252525;
+        }
         .dark table tbody tr {
             background-color: #1E1E1E;
             border-bottom: 1px solid #333333;
         }
         .dark table tbody tr:hover { background-color: #252525; }
         .dark table td { color: #E0E0E0; }
+        /* Dark mode for new number column */
+        .dark table td.col-number {
+            color: #888;
+        }
         .dark .expandable-cell:hover { background-color: rgba(159, 232, 112, 0.05); }
 
         /* Modal */
@@ -678,16 +708,22 @@
         /* Forms */
         .dark input:not([type="checkbox"]):not([type="radio"]), 
         .dark select, 
-        .dark textarea {
+        .dark textarea,
+        .dark #tableSearchInput { 
             background-color: #121212 !important;
             border: 1px solid #333333 !important;
             color: #E0E0E0 !important;
         }
-        .dark input:focus, .dark select:focus, .dark textarea:focus {
+        .dark input:focus, 
+        .dark select:focus, 
+        .dark textarea:focus,
+        .dark #tableSearchInput:focus { 
             border-color: #9FE870 !important;
             box-shadow: 0 0 0 2px rgba(159, 232, 112, 0.2) !important;
         }
-        .dark input::placeholder, .dark textarea::placeholder {
+        .dark input::placeholder, 
+        .dark textarea::placeholder,
+        .dark #tableSearchInput::placeholder { 
             color: #666 !important;
         }
         .dark .password-toggle { color: #666; }
@@ -741,10 +777,18 @@
         </aside>
 
         <main class="flex-1 content-area p-6 lg:p-8 overflow-auto">
-            <div class="mb-8 flex justify-between items-center pt-12 lg:pt-0">
+            <div class="mb-8 flex flex-col sm:flex-row justify-between items-center gap-4 pt-12 lg:pt-0">
                 <div>
                     <h1 class="text-3xl font-bold text-gray-800" id="pageTitle">Dashboard</h1>
                 </div>
+
+                <div id="tableSearchContainer" class="relative w-full sm:w-64 hidden">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input id="tableSearchInput" type="text" placeholder="Search this table..." class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent" style="padding-left: 2.75rem !important;">
+                </div>
+
                 <div class="flex items-center gap-6">
                     <button id="themeToggle" class="text-2xl text-gray-600 transition-colors">
                         <i class="fas fa-moon"></i> </button>
@@ -779,10 +823,15 @@
 
         // Global variables
         let currentTable = 'dashboard';
-        let currentData = [];
+        let currentData = []; 
         let currentPage = 1;
         const itemsPerPage = 10;
+        let currentSearchTerm = ''; 
+        // --- MODIFIED: Default sort is now "Newest" (created_at Descending)
+        let currentSort = { column: 'created_at', ascending: false }; 
         let charts = {};
+        let showingArchived = false; 
+        const archivableTables = ['members', 'announcements', 'notifications']; 
 
         // Mobile menu toggle
         document.getElementById('menuToggle').addEventListener('click', () => {
@@ -823,13 +872,20 @@
         // Load counts on page load
         async function loadCounts() {
             try {
-                const tables = ['notifications', 'members', 'announcements', 'admin_user', 'admins'];
+                // MODIFIED: admin_user is not a visible table, removed it from count
+                const allTables = ['notifications', 'members', 'announcements', 'admins'];
                 const counts = {};
 
-                for (const table of tables) {
-                    const { count, error } = await supabase
+                for (const table of allTables) {
+                    let query = supabase
                         .from(table)
                         .select('*', { count: 'exact', head: true });
+                    
+                    if (archivableTables.includes(table)) {
+                        query = query.filter('archived', 'eq', false);
+                    }
+
+                    const { count, error } = await query;
                     
                     if (!error) {
                         counts[table] = count || 0;
@@ -843,9 +899,8 @@
             }
         }
 
-        // Navigate to section from dashboard cards - NEW
+        // Navigate to section from dashboard cards
         function navigateToSection(tableName) {
-            // Update active nav - highlight the corresponding navigation
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.classList.remove('active');
                 if (link.getAttribute('data-table') === tableName) {
@@ -853,19 +908,28 @@
                 }
             });
 
-            // Set current table
             currentTable = tableName;
             currentPage = 1;
+            showingArchived = false; 
+            currentSearchTerm = ''; 
+            document.getElementById('tableSearchInput').value = ''; 
+            // --- MODIFIED: Reset sort to "Newest" (created_at Descending)
+            currentSort = { column: 'created_at', ascending: false }; 
 
-            // Navigate to the section
             if (tableName === 'dashboard') {
                 showDashboard();
             } else {
                 document.getElementById('pageTitle').textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1).replace('_', ' ');
                 loadTableData();
             }
+            
+            if (tableName === 'dashboard') {
+                document.getElementById('tableSearchContainer').classList.add('hidden');
+            } else {
+                document.getElementById('tableSearchContainer').classList.remove('hidden');
+            }
 
-            // Close mobile menu if open
+
             if (window.innerWidth < 1024) {
                 document.getElementById('sidebar').classList.remove('active');
                 document.getElementById('mobileOverlay').classList.remove('active');
@@ -875,82 +939,67 @@
         // Show Dashboard
         async function showDashboard() {
             document.getElementById('pageTitle').textContent = 'Dashboard';
+            document.getElementById('tableSearchContainer').classList.add('hidden'); 
+            document.getElementById('tableSearchInput').value = ''; 
+            currentSearchTerm = ''; 
 
             const tableSection = document.getElementById('tableSection');
             tableSection.innerHTML = '<div class="text-center py-8"><div class="loading mx-auto"></div></div>';
 
-            const counts = await loadCounts();
+            const counts = await loadCounts(); 
 
             const dashboardHTML = `
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div class="dashboard-stat-card" onclick="navigateToSection('members')">
                         <div>
-                            <div class="icon">
-                                <i class="fas fa-users"></i>
-                            </div>
+                            <div class="icon"><i class="fas fa-users"></i></div>
                             <div class="status">Total</div>
                             <div class="number">${counts.members || 0}</div>
                             <div class="label">Active Members</div>
                         </div>
                     </div>
-
                     <div class="dashboard-stat-card" onclick="navigateToSection('admins')">
                         <div>
-                            <div class="icon">
-                                <i class="fas fa-user-shield"></i>
-                            </div>
+                            <div class="icon"><i class="fas fa-user-shield"></i></div>
                             <div class="status">Total</div>
                             <div class="number">${counts.admins || 0}</div>
                             <div class="label">Administrators</div>
                         </div>
                     </div>
-
                     <div class="dashboard-stat-card" onclick="navigateToSection('announcements')">
                         <div>
-                            <div class="icon">
-                                <i class="fas fa-bullhorn"></i>
-                            </div>
+                            <div class="icon"><i class="fas fa-bullhorn"></i></div>
                             <div class="status">Active</div>
                             <div class="number">${counts.announcements || 0}</div>
                             <div class="label">Announcements</div>
                         </div>
                     </div>
-
                     <div class="dashboard-stat-card" onclick="navigateToSection('notifications')">
                         <div>
-                            <div class="icon">
-                                <i class="fas fa-bell"></i>
-                            </div>
+                            <div class="icon"><i class="fas fa-bell"></i></div>
                             <div class="status">Total</div>
                             <div class="number">${counts.notifications || 0}</div>
                             <div class="label">NotifyMe!</div>
                         </div>
                     </div>
                 </div>
-
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                     <div class="info-card">
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Database Distribution</h3>
-                        <div class="chart-container">
-                            <canvas id="pieChart"></canvas>
-                        </div>
+                        <div class="chart-container"><canvas id="pieChart"></canvas></div>
                     </div>
                     <div class="info-card">
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Records Overview</h3>
-                        <div class="chart-container">
-                            <canvas id="barChart"></canvas>
-                        </div>
+                        <div class="chart-container"><canvas id="barChart"></canvas></div>
                     </div>
                 </div>
-
                 <div class="info-card">
                     <h3 class="text-lg font-bold text-gray-800 mb-4">
-                        <i class="fas fa-info-circle mr-2" style="color: #9FE870;"></i>
-                        System Overview
+                        <i class="fas fa-info-circle mr-2" style="color: #9FE870;"></i> System Overview
                     </h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div class="p-4 rounded-lg" style="background-color: #F5F5F5; border: 1px solid #E0E0E0;">
-                            <p class="text-sm text-gray-600 mb-1">Total Records</p>
+                            <p class="text-sm text-gray-600 mb-1">Total Records (Active)</p>
                             <p class="text-2xl font-bold" style="color: #9FE870;">${Object.values(counts).reduce((a, b) => a + b, 0)}</p>
                         </div>
                         <div class="p-4 rounded-lg" style="background-color: #F5F5F5; border: 1px solid #E0E0E0;">
@@ -964,17 +1013,13 @@
                     </div>
                 </div>
             `;
-
             tableSection.innerHTML = dashboardHTML;
 
-            // Destroy existing charts
             Object.values(charts).forEach(chart => chart.destroy());
             charts = {};
-            
-            // Get current theme options for charts
             const chartThemeOptions = getChartThemeOptions();
 
-            // Create Pie Chart with different colors
+            // Create Pie Chart
             const pieCtx = document.getElementById('pieChart');
             if (pieCtx) {
                 charts.pie = new Chart(pieCtx, {
@@ -987,25 +1032,16 @@
                                 counts.admins || 0,
                                 counts.announcements || 0,
                                 counts.notifications || 0,
-                                counts.admin_user || 0
                             ],
-                            backgroundColor: [
-                                '#FF6B6B',  // Red
-                                '#4ECDC4',  // Teal
-                                '#FFE66D',  // Yellow
-                                '#95E1D3',  // Mint
-                                '#A8E6CF'   // Light green
-                            ],
+                            backgroundColor: ['#FF6B6B', '#4ECDC4', '#FFE66D', '#95E1D3'],
                             borderColor: document.documentElement.classList.contains('dark') ? '#1E1E1E' : '#FFFFFF',
                             borderWidth: 2
                         }]
                     },
-                    options: { // UPDATED
+                    options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: {
-                            legend: chartThemeOptions.plugins.legend
-                        }
+                        plugins: { legend: chartThemeOptions.plugins.legend }
                     }
                 });
             }
@@ -1024,20 +1060,17 @@
                                 counts.admins || 0,
                                 counts.announcements || 0,
                                 counts.notifications || 0,
-                                counts.admin_user || 0
                             ],
                             backgroundColor: '#9FE870',
                             borderColor: '#8AD95E',
                             borderWidth: 2
                         }]
                     },
-                    options: { // UPDATED
+                    options: {
                         responsive: true,
                         maintainAspectRatio: false,
                         scales: chartThemeOptions.scales,
-                        plugins: {
-                            legend: chartThemeOptions.plugins.legend
-                        }
+                        plugins: { legend: chartThemeOptions.plugins.legend }
                     }
                 });
             }
@@ -1047,36 +1080,91 @@
         async function showSection(tableName) {
             currentTable = tableName;
             currentPage = 1;
-            
-            // Update active nav
-            document.querySelectorAll('.nav-link').forEach(link => {
-                link.classList.remove('active');
-            });
+            showingArchived = false; 
+            currentSearchTerm = ''; 
+            document.getElementById('tableSearchInput').value = ''; 
+            // --- MODIFIED: Reset sort to "Newest" (created_at Descending)
+            currentSort = { column: 'created_at', ascending: false }; 
+
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
             
             const clickedLink = event?.target?.closest('.nav-link');
             if (clickedLink) {
                 clickedLink.classList.add('active');
             } else {
-                // If called programmatically, find and activate the nav link
                 const navLink = document.querySelector(`.nav-link[data-table="${tableName}"]`);
-                if (navLink) {
-                    navLink.classList.add('active');
-                }
+                if (navLink) navLink.classList.add('active');
             }
 
-            // Close mobile menu
             if (window.innerWidth < 1024) {
                 document.getElementById('sidebar').classList.remove('active');
                 document.getElementById('mobileOverlay').classList.remove('active');
             }
 
             if (tableName === 'dashboard') {
+                document.getElementById('tableSearchContainer').classList.add('hidden');
                 await showDashboard();
             } else {
+                document.getElementById('tableSearchContainer').classList.remove('hidden');
                 document.getElementById('pageTitle').textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1).replace('_', ' ');
                 await loadTableData();
             }
         }
+
+        // Function to toggle archive view
+        function toggleShowArchived(isChecked) {
+            showingArchived = isChecked;
+            currentPage = 1;
+            currentSearchTerm = ''; 
+            document.getElementById('tableSearchInput').value = ''; 
+            loadTableData();
+        }
+        
+        // Function to handle search input
+        function handleSearch(term) {
+            currentSearchTerm = term.toLowerCase();
+            currentPage = 1; 
+            renderTable();
+        }
+
+        // Function to handle sorting by clicking headers
+        function handleSort(column) {
+            if (currentSort.column === column) {
+                currentSort.ascending = !currentSort.ascending;
+            } else {
+                currentSort.column = column;
+                currentSort.ascending = true;
+            }
+            currentPage = 1; 
+            renderTable(); 
+        }
+
+        // --- NEW: Function to toggle sort by created_at ---
+        function toggleDateSort() {
+            if (currentSort.column === 'created_at') {
+                // Already sorting by date, just flip direction
+                currentSort.ascending = !currentSort.ascending;
+            } else {
+                // Was sorting by something else, switch to date (default Newest)
+                currentSort.column = 'created_at';
+                currentSort.ascending = false;
+            }
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Helper to get sort icon for headers
+        function getSortIcon(column) {
+            if (currentSort.column !== column) {
+                return '<i class="fas fa-sort text-gray-400 ml-2"></i>';
+            }
+            if (currentSort.ascending) {
+                return '<i class="fas fa-sort-up text-wise-bright-green ml-2"></i>';
+            } else {
+                return '<i class="fas fa-sort-down text-wise-bright-green ml-2"></i>';
+            }
+        }
+
 
         // Load table data
         async function loadTableData() {
@@ -1084,17 +1172,25 @@
                 const tableSection = document.getElementById('tableSection');
                 tableSection.innerHTML = '<div class="text-center py-8"><div class="loading mx-auto"></div></div>';
 
-                const { data, error, count } = await supabase
+                let query = supabase
                     .from(currentTable)
-                    .select('*', { count: 'exact' })
-                    .order('id', { ascending: true });
+                    .select('*') 
+                    .order('id', { ascending: true }); // Base order, will be overridden by renderTable
+
+                if (archivableTables.includes(currentTable)) {
+                    if (showingArchived) {
+                        query = query.filter('archived', 'eq', true);
+                    } else {
+                        query = query.filter('archived', 'eq', false);
+                    }
+                }
+                
+                const { data, error } = await query;
 
                 if (error) throw error;
 
-                currentData = data || [];
-                const totalPages = Math.ceil((count || 0) / itemsPerPage);
-
-                renderTable(totalPages);
+                currentData = data || []; 
+                renderTable(); 
             } catch (error) {
                 console.error('Error loading data:', error);
                 document.getElementById('tableSection').innerHTML = 
@@ -1102,33 +1198,130 @@
             }
         }
 
-        // Render table with expandable cells
-        function renderTable(totalPages) {
+        // Render table
+        function renderTable() {
+            
+            let processedData = [...currentData];
+
+            // 1. Filter by search term
+            if (currentSearchTerm) {
+                processedData = processedData.filter(row => 
+                    Object.values(row).some(val => 
+                        String(val).toLowerCase().includes(currentSearchTerm)
+                    )
+                );
+            }
+
+            // 2. Sort data
+            processedData.sort((a, b) => {
+                let valA = a[currentSort.column];
+                let valB = b[currentSort.column];
+
+                // Handle string dates (created_at)
+                if (currentSort.column.includes('_at') && valA && valB) {
+                    valA = new Date(valA).getTime();
+                    valB = new Date(valB).getTime();
+                }
+
+                let compare = 0;
+                
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    compare = valA - valB;
+                } else if (valA > valB) {
+                    compare = 1;
+                } else if (valA < valB) {
+                    compare = -1;
+                }
+
+                if (valA == null && valB != null) compare = 1;
+                if (valA != null && valB == null) compare = -1;
+                if (valA == null && valB == null) compare = 0;
+
+                return currentSort.ascending ? compare : compare * -1; 
+            });
+
+            // 3. Pagination
+            const totalItems = processedData.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1; 
+            if (currentPage > totalPages) currentPage = totalPages; 
             const startIndex = (currentPage - 1) * itemsPerPage;
             const endIndex = startIndex + itemsPerPage;
-            const pageData = currentData.slice(startIndex, endIndex);
+            const pageData = processedData.slice(startIndex, endIndex); 
+
+
+            const isArchivable = archivableTables.includes(currentTable); 
 
             let tableHTML = `
                 <div class="bg-white rounded-xl shadow p-6">
                     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-                        <h2 class="text-2xl font-bold text-gray-800 capitalize">${currentTable.replace('_', ' ')}</h2>
-                        <button onclick="openAddModal()" class="w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2" style="background-color: #9FE870; color: #000;">
-                            <i class="fas fa-plus"></i>
-                            <span>Add New</span>
-                        </button>
+                        <div class="flex-1">
+                            <h2 class="text-2xl font-bold text-gray-800 capitalize">${currentTable.replace('_', ' ')} ${showingArchived ? '(Archived)' : ''}</h2>
+                        </div>
+                        
+                        <div class="flex items-center gap-4">
+            `;
+
+            if (isArchivable) {
+                tableHTML += `
+                            <div class="flex items-center gap-2">
+                                <input type="checkbox" id="showArchivedToggle" onchange="toggleShowArchived(this.checked)" ${showingArchived ? 'checked' : ''} class="h-4 w-4 rounded" style="accent-color: #9FE870;">
+                                <label for="showArchivedToggle" class="text-sm font-medium text-gray-700">Show Archived</label>
+                            </div>
+                `;
+            }
+
+            // --- NEW: Add Sort Button ---
+            let headers = [];
+            if (currentData.length > 0) { headers = Object.keys(currentData[0]); }
+            const hasCreatedAt = headers.includes('created_at');
+
+            if (hasCreatedAt) {
+                let sortIconClass = 'fas fa-filter'; // Default icon
+                let sortText = 'Sort by Date';
+                if (currentSort.column === 'created_at') {
+                    // Use arrows to show direction
+                    sortIconClass = currentSort.ascending ? 'fas fa-arrow-up-short-wide' : 'fas fa-arrow-down-short-wide';
+                    sortText = currentSort.ascending ? 'Oldest First' : 'Newest First';
+                }
+                
+                tableHTML += `
+                    <button onclick="toggleDateSort()" class="w-full sm:w-auto px-4 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600" title="Toggle date sort">
+                        <i class="${sortIconClass}"></i>
+                        <span class="hidden sm:inline">${sortText}</span>
+                    </button>
+                `;
+            }
+            // --- END NEW Sort Button ---
+
+            tableHTML += `
+                            <button onclick="openAddModal()" class="w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-colors ${showingArchived ? 'hidden' : 'flex'} items-center justify-center gap-2" style="background-color: #9FE870; color: #000;">
+                                <i class="fas fa-plus"></i>
+                                <span>Add New</span>
+                            </button>
+                        </div>
                     </div>
                     <div class="table-container">
                         <table class="w-full">
                             <thead>
                                 <tr>
+                                    <th class="px-4 py-3 text-left col-number">#</th>
             `;
 
-            // Generate table headers
-            if (pageData.length > 0) {
-                Object.keys(pageData[0]).forEach(key => {
-                    tableHTML += `<th class="px-4 py-3 text-left">${key.toUpperCase()}</th>`;
+            // Generate table headers (headers already defined above)
+            if (headers.length > 0) {
+                headers.forEach(key => {
+                    if (key !== 'archived' && key !== 'archived_at') {
+                        const isIdCol = key === 'id';
+                        tableHTML += `
+                            <th class="px-4 py-3 text-left sortable ${isIdCol ? 'col-id' : ''}" onclick="handleSort('${key}')" title="Sort by ${key}">
+                                <div class="flex items-center">
+                                    ${key.toUpperCase().replace('_', ' ')}
+                                    ${getSortIcon(key)}
+                                </div>
+                            </th>`;
+                    }
                 });
-                tableHTML += '<th class="px-4 py-3 text-left">ACTIONS</th>';
+                tableHTML += '<th class="px-4 py-3 text-left col-actions">ACTIONS</th>';
             }
 
             tableHTML += `
@@ -1137,81 +1330,123 @@
                             <tbody>
             `;
 
-            // Generate table rows with expandable cells
-            pageData.forEach(row => {
-                tableHTML += '<tr>';
-                Object.entries(row).forEach(([key, value]) => {
-                    if (key.toLowerCase().includes('password')) {
-                        tableHTML += `
-                            <td class="px-4 py-3 password-cell">
-                                <div class="password-display">
-                                    <span class="password-text-${row.id}">••••••••</span>
-                                    <i class="fas fa-eye password-toggle" onclick="togglePassword(${row.id}, '${value ? String(value).replace(/'/g, "\\'") : ''}')"></i>
-                                </div>
-                            </td>
-                        `;
-                    } else {
-                        const fullText = value !== null ? String(value) : '';
-                        const truncated = truncateText(fullText, 100);
-                        const needsTruncation = fullText.length > 100;
-                        
-                        if (needsTruncation) {
+            // Handle "No data"
+            if (pageData.length === 0) {
+                const colCount = headers.filter(h => h !== 'archived' && h !== 'archived_at').length + 2; 
+                tableHTML += `
+                    <tr>
+                        <td colspan="${colCount || 2}" class="text-center py-8 text-gray-500">
+                            ${currentSearchTerm ? `No results found for "${currentSearchTerm}".` : 'No data in this view.'}
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // Generate table rows
+                pageData.forEach((row, index) => {
+                    tableHTML += '<tr>';
+                    
+                    tableHTML += `<td class="px-4 py-3 font-medium text-gray-500 col-number">${startIndex + index + 1}</td>`;
+
+                    Object.entries(row).forEach(([key, value]) => {
+                        if (key === 'archived' || key === 'archived_at') return;
+
+                        const isIdCol = key === 'id';
+
+                        if (key.toLowerCase().includes('password')) {
                             tableHTML += `
-                                <td class="px-4 py-3 expandable-cell" 
-                                    onclick="toggleCellExpansion(this)"
-                                    data-full-text="${fullText.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
-                                    data-truncated-text="${truncated.replace('...', '').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
-                                    title="Click to expand/collapse">
-                                    ${truncated}<span class="expand-indicator">⋯</span>
+                                <td class="px-4 py-3 password-cell">
+                                    <div class="password-display">
+                                        <span class="password-text-${row.id}">••••••••</span>
+                                        <i class="fas fa-eye password-toggle" onclick="togglePassword(${row.id}, '${value ? String(value).replace(/'/g, "\\'") : ''}')"></i>
+                                    </div>
                                 </td>
                             `;
                         } else {
-                            tableHTML += `<td class="px-4 py-3">${fullText}</td>`;
+                            const fullText = value !== null ? String(value) : '';
+                            const truncated = truncateText(fullText, 100);
+                            const needsTruncation = fullText.length > 100 && key !== 'id'; // Don't truncate ID
+                            
+                            if (needsTruncation) {
+                                tableHTML += `
+                                    <td class="px-4 py-3 expandable-cell" 
+                                        onclick="toggleCellExpansion(this)"
+                                        data-full-text="${fullText.replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
+                                        data-truncated-text="${truncated.replace('...', '').replace(/"/g, '&quot;').replace(/'/g, '&#39;')}"
+                                        title="Click to expand/collapse">
+                                        ${truncated}<span class="expand-indicator">⋯</span>
+                                    </td>
+                                `;
+                            } else {
+                                tableHTML += `<td class="px-4 py-3 ${isIdCol ? 'col-id' : ''}">${fullText}</td>`;
+                            }
+                        }
+                    });
+
+                    // Action buttons
+                    tableHTML += `
+                        <td class="px-4 py-3 col-actions">
+                            <div class="flex gap-2 justify-start">
+                    `;
+
+                    if (showingArchived) {
+                        tableHTML += `
+                                <button onclick="restoreRow(${row.id})" class="btn-action" style="color: #9FE870;" title="Restore">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button onclick="deleteRowPermanently(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Delete Permanently">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                        `;
+                    } else {
+                        tableHTML += `
+                                <button onclick="openEditModal(${row.id})" class="btn-action hover:text-blue-600" style="color: #9FE870;" title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                        `;
+                        
+                        if (isArchivable) {
+                            tableHTML += `
+                                <button onclick="archiveRow(${row.id})" class="btn-action text-yellow-600 hover:text-yellow-700" title="Archive">
+                                    <i class="fas fa-archive"></i>
+                                </button>
+                            `;
+                        } else if (currentTable !== 'admins') { 
+                            tableHTML += `
+                                <button onclick="deleteRowPermanently(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            `;
                         }
                     }
-                });
-                tableHTML += `
-                    <td class="px-4 py-3">
-                        <div class="flex gap-2 justify-start">
-                            <button onclick="openEditModal(${row.id})" class="btn-action hover:text-blue-600" style="color: #9FE870;" title="Edit">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteRow(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Delete">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                `;
-            });
 
-            tableHTML += `
-                            </tbody>
-                        </table>
-                    </div>
-            `;
+                    tableHTML += `
+                            </div>
+                        </td>
+                    </tr>
+                    `;
+                });
+            } 
+
+
+            tableHTML += `</tbody></table></div>`;
 
             // Pagination
             if (totalPages > 1) {
                 tableHTML += `
                     <div class="mt-6 flex justify-center items-center gap-2 flex-wrap">
-                        <button onclick="changePage(${currentPage - 1})" 
-                                ${currentPage === 1 ? 'disabled' : ''} 
-                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                             <i class="fas fa-chevron-left"></i>
                         </button>
                         <span class="px-4 py-2 text-gray-700 font-semibold">Page ${currentPage} of ${totalPages}</span>
-                        <button onclick="changePage(${currentPage + 1})" 
-                                ${currentPage === totalPages ? 'disabled' : ''} 
-                                class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                             <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
                 `;
             }
 
+        
             tableHTML += '</div>';
-
             document.getElementById('tableSection').innerHTML = tableHTML;
         }
 
@@ -1233,10 +1468,21 @@
 
         // Change page
         function changePage(page) {
-            const totalPages = Math.ceil(currentData.length / itemsPerPage);
-            if (page < 1 || page > totalPages) return;
+            let processedData = [...currentData];
+            if (currentSearchTerm) {
+                processedData = processedData.filter(row => 
+                    Object.values(row).some(val => 
+                        String(val).toLowerCase().includes(currentSearchTerm)
+                    )
+                );
+            }
+            const totalItems = processedData.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage) || 1;
+
+            if (page < 1 || page > totalPages) return; 
+            
             currentPage = page;
-            renderTable(totalPages);
+            renderTable(); 
         }
 
         // Open add modal
@@ -1245,19 +1491,44 @@
             const form = document.getElementById('modalForm');
             form.innerHTML = '';
 
+            let sampleKeys = [];
             if (currentData.length > 0) {
-                const sample = currentData[0];
-                Object.keys(sample).forEach(key => {
-                    if (key !== 'id') {
-                        form.innerHTML += `
-                            <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
-                                <input type="${key.toLowerCase().includes('password') ? 'password' : 'text'}" 
-                                       name="${key}" 
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-                                       ${key.toLowerCase().includes('email') ? 'type="email"' : ''}>
-                            </div>
-                        `;
+                sampleKeys = Object.keys(currentData[0]);
+            } else if (currentTable === 'members') {
+                sampleKeys = ['id', 'name', 'email', 'password', 'created_at', 'archived', 'archived_at']; 
+            } else if (currentTable === 'admins') {
+                sampleKeys = ['id', 'username', 'password', 'created_at']; 
+            } else if (currentTable === 'announcements') {
+                sampleKeys = ['id', 'title', 'content', 'created_at', 'archived', 'archived_at']; 
+            } else if (currentTable === 'notifications') {
+                sampleKeys = ['id', 'message', 'target_user_id', 'created_at', 'archived', 'archived_at']; 
+            }
+            
+
+            if (sampleKeys.length > 0) {
+                sampleKeys.forEach(key => {
+                    if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'created_at') { 
+                        const isTextArea = key === 'content' || key === 'message';
+                        
+                        if (isTextArea) {
+                            form.innerHTML += `
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                    <textarea name="${key}" rows="4"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"></textarea>
+                                </div>
+                            `;
+                        } else {
+                            form.innerHTML += `
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                    <input type="${key.toLowerCase().includes('password') ? 'password' : 'text'}" 
+                                            name="${key}" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                                            ${key.toLowerCase().includes('email') ? 'type="email"' : ''}>
+                                </div>
+                            `;
+                        }
                     }
                 });
             }
@@ -1286,17 +1557,31 @@
             form.innerHTML = '';
 
             Object.entries(row).forEach(([key, value]) => {
-                if (key !== 'id') {
-                    form.innerHTML += `
-                        <div>
-                            <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
-                            <input type="${key.toLowerCase().includes('password') ? 'password' : 'text'}" 
-                                   name="${key}" 
-                                   value="${value !== null ? value : ''}"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-                                   ${key.toLowerCase().includes('email') ? 'type="email"' : ''}>
-                        </div>
-                    `;
+                if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'created_at') {
+                    const isTextArea = key === 'content' || key === 'message';
+                    const safeValue = value !== null ? String(value).replace(/"/g, '&quot;') : '';
+
+                    if (isTextArea) {
+                         form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <textarea name="${key}" rows="4"
+                                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">${safeValue}</textarea>
+                            </div>
+                        `;
+                    } else {
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <input type="${key.toLowerCase().includes('password') ? 'password' : 'text'}" 
+                                        name="${key}" 
+                                        value="${safeValue}"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
+                                        ${key.toLowerCase().includes('email') ? 'type="email"' : ''}
+                                        ${key.toLowerCase().includes('password') ? 'placeholder="Leave blank to keep same password"' : ''}>
+                            </div>
+                        `;
+                    }
                 }
             });
 
@@ -1322,14 +1607,16 @@
                 const formData = new FormData(form);
                 const data = {};
                 
-                formData.forEach((value, key) => {
-                    data[key] = value;
-                });
+                formData.forEach((value, key) => data[key] = value);
+                
+                if (archivableTables.includes(currentTable)) {
+                    data.archived = false;
+                    data.archived_at = null; 
+                }
+                
+                data.created_at = new Date().toISOString();
 
-                const { error } = await supabase
-                    .from(currentTable)
-                    .insert([data]);
-
+                const { error } = await supabase.from(currentTable).insert([data]);
                 if (error) throw error;
 
                 closeModal();
@@ -1350,18 +1637,15 @@
                 let id;
                 
                 formData.forEach((value, key) => {
-                    if (key === 'id') {
-                        id = parseInt(value);
-                    } else {
-                        data[key] = value;
-                    }
+                    if (key === 'id') id = parseInt(value);
+                    else data[key] = value;
                 });
+                
+                if (data.hasOwnProperty('password') && data.password === '') {
+                    delete data.password;
+                }
 
-                const { error } = await supabase
-                    .from(currentTable)
-                    .update(data)
-                    .eq('id', id);
-
+                const { error } = await supabase.from(currentTable).update(data).eq('id', id);
                 if (error) throw error;
 
                 closeModal();
@@ -1373,23 +1657,62 @@
             }
         }
 
-        // Delete row
-        async function deleteRow(id) {
-            if (!confirm('Are you sure you want to delete this record?')) return;
+        // Function to ARCHIVE a record
+        async function archiveRow(id) {
+            if (!confirm('Are you sure you want to archive this record?')) return;
 
             try {
                 const { error } = await supabase
                     .from(currentTable)
-                    .delete()
+                    .update({ archived: true, archived_at: new Date().toISOString() }) 
                     .eq('id', id);
 
                 if (error) throw error;
 
                 await loadTableData();
-                alert('Record deleted successfully!');
+                alert('Record archived!');
             } catch (error) {
-                console.error('Error deleting:', error);
-                alert('Error deleting record. Please try again.');
+                console.error('Error archiving:', error);
+                alert('Error archiving record. Please try again.');
+            }
+        }
+
+        // Function to RESTORE an archived item
+        async function restoreRow(id) {
+            if (!confirm('Are you sure you want to restore this record?')) return;
+            try {
+                const { error } = await supabase
+                    .from(currentTable)
+                    .update({ archived: false, archived_at: null }) 
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadTableData(); 
+                alert('Record restored successfully!');
+            } catch (error) {
+                console.error('Error restoring:', error);
+                alert('Error restoring record. Please try again.');
+            }
+        }
+
+        // This is now only for PERMANENT deletion
+        async function deleteRowPermanently(id) {
+            if (!confirm('PERMANENT DELETE: Are you sure? This action cannot be undone.')) return;
+
+            try {
+                const { error } = await supabase
+                    .from(currentTable)
+                    .delete() 
+                    .eq('id', id);
+
+                if (error) throw error;
+
+                await loadTableData(); 
+                alert('Record permanently deleted!');
+            } catch (error) {
+                console.error('Error permanently deleting:', error);
+                alert('Error permanently deleting record. Please try again.');
             }
         }
 
@@ -1405,7 +1728,7 @@
             }
         }
         
-        // --- ADDED: Dark Mode Toggle Functionality ---
+        // --- Dark Mode Toggle Functionality ---
         const themeToggle = document.getElementById('themeToggle');
         const themeIcon = themeToggle.querySelector('i');
 
@@ -1413,7 +1736,7 @@
             if (isDark) {
                 themeIcon.classList.remove('fa-moon');
                 themeIcon.classList.add('fa-sun');
-                themeToggle.classList.add('text-yellow-400'); // Sun color
+                themeToggle.classList.add('text-yellow-400');
                 themeToggle.classList.remove('text-gray-600');
             } else {
                 themeIcon.classList.remove('fa-sun');
@@ -1459,7 +1782,6 @@
             localStorage.theme = isDark ? 'dark' : 'light';
             setIcon(isDark);
 
-            // Re-render dashboard charts if currently on dashboard
             if (currentTable === 'dashboard') {
                 showDashboard(); 
             }
@@ -1468,12 +1790,12 @@
         themeToggle.addEventListener('click', toggleDarkMode);
         // --- End Dark Mode ---
 
-
         // Initialize
         window.addEventListener('DOMContentLoaded', async () => {
-            // Set initial theme icon
             setIcon(document.documentElement.classList.contains('dark')); 
             
+            document.getElementById('tableSearchInput').addEventListener('input', (e) => handleSearch(e.target.value));
+
             await showDashboard();
         });
     </script>

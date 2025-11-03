@@ -4,19 +4,25 @@
   <meta charset="UTF-8"/>
   <title>Edit Profile with Face Detection</title>
   <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1a1a1a;
+      font-family: Arial, sans-serif;
+    }
     .ep-modal {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(25, 32, 45, 0.75);
+      background: rgba(26, 26, 26, 0.95);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1001;
     }
     .ep-form {
-      background: #fff;
-      border-radius: 22px;
-      box-shadow: 0 6px 38px rgba(44,62,80,0.19);
+      background: #2d2d2d;
+      border-radius: 8px;
+      box-shadow: 0 6px 38px rgba(0, 0, 0, 0.5);
       padding: 46px 34px;
       width: 440px;
       display: flex;
@@ -25,26 +31,55 @@
     }
     .ep-form h2 {
       font-size: 2rem;
-      color: #2577c3;
+      color: #7ed321;
       margin-bottom: 12px;
       font-weight: 700;
+      text-align: center;
     }
     .ep-avatar-box {
       display: flex;
-      align-items: center;
+      align-items: flex-start;
       gap: 22px;
+    }
+    .avatar-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
     }
     .ep-avatar {
       width: 82px;
       height: 82px;
       border-radius: 99px;
-      border: 2px solid #e2e2e2;
+      border: 2px solid #7ed321;
       object-fit: cover;
-      background: #f7f8fb;
+      background: #1a1a1a;
+    }
+    .face-badge {
+      background: #7ed321;
+      color: #1a1a1a;
+      font-size: 0.85rem;
+      font-weight: bold;
+      padding: 4px 10px;
+      border-radius: 12px;
+      white-space: nowrap;
     }
     #editAvatarFile {
       font-size: 1.1rem;
-      padding: 0;
+      padding: 8px;
+      background: #1a1a1a;
+      color: #ffffff;
+      border: 1px solid #3d3d3d;
+      border-radius: 8px;
+    }
+    #editAvatarFile::file-selector-button {
+      background: #7ed321;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: bold;
     }
     .avatar-actions {
       display: flex;
@@ -52,8 +87,8 @@
       gap: 6px;
     }
     .avatar-btn {
-      background: #2577c3;
-      color: #fff;
+      background: #7ed321;
+      color: #1a1a1a;
       border: none;
       border-radius: 8px;
       font-size: 1.07rem;
@@ -61,9 +96,10 @@
       cursor: pointer;
       margin-top: 4px;
       transition: background 0.18s;
+      font-weight: bold;
     }
     .avatar-btn:active, .avatar-btn:focus {
-      background: #175689;
+      background: #6bb81d;
     }
     .camera-box {
       display: flex;
@@ -73,28 +109,32 @@
       margin-top: 8px;
     }
     video {
-      border-radius: 12px;
-      border: 2px solid #d2dbe5;
-      width: 180px;
-      height: 120px;
-      background: #222;
+      border-radius: 8px;
+      border: 2px solid #7ed321;
+      width: 360px;
+      height: 270px;
+      background: #1a1a1a;
       object-fit: cover;
     }
     .ep-input, .ep-btn, #editAvatarFile {
       font-size: 1.23rem;
       border-radius: 8px;
-      border: 1px solid #d2dbe5;
       padding: 15px 19px;
       width: 100%;
       box-sizing: border-box;
     }
     .ep-input {
-      background: #f8fafd;
+      background: #1a1a1a;
+      border: 1px solid #3d3d3d;
+      color: #ffffff;
       margin-bottom: 0;
     }
+    .ep-input::placeholder {
+      color: #a0a0a0;
+    }
     .ep-btn {
-      background: #2577c3;
-      color: #fff;
+      background: #7ed321;
+      color: #1a1a1a;
       border: none;
       font-weight: 700;
       font-size: 1.23rem;
@@ -104,16 +144,20 @@
       padding-top: 16px;
       padding-bottom: 16px;
     }
+    .ep-btn:hover {
+      background: #6bb81d;
+    }
     .ep-btn:disabled {
-      background: #9ca3af;
+      background: #3d3d3d;
+      color: #a0a0a0;
       cursor: default;
     }
     .profile-card {
       display: flex;
       align-items: center;
-      background: #fff;
-      border-radius: 22px;
-      box-shadow: 0 6px 30px rgba(44,62,80,0.1);
+      background: #2d2d2d;
+      border-radius: 8px;
+      box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
       padding: 30px 28px;
       width: 440px;
       gap: 24px;
@@ -124,24 +168,25 @@
       width: 82px;
       height: 82px;
       border-radius: 99px;
-      border: 2px solid #e2e2e2;
+      border: 2px solid #7ed321;
       object-fit: cover;
-      background: #f7f8fb;
+      background: #1a1a1a;
     }
     .profile-info {
       flex: 1;
       display: flex;
       flex-direction: column;
       gap: 10px;
+      color: #ffffff;
     }
     .profile-label {
       font-weight: bold;
-      color: #2577c3;
+      color: #7ed321;
       margin-right: 6px;
     }
     .edit-again-btn {
-      background: #20b16a;
-      color: #fff;
+      background: #7ed321;
+      color: #1a1a1a;
       font-weight: 600;
       border-radius: 8px;
       font-size: 1.07rem;
@@ -152,26 +197,130 @@
       transition: background 0.18s;
     }
     .edit-again-btn:hover {
-      background: #14894d;
+      background: #6bb81d;
     }
-    #faceApiStatus {
+    .error-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(26, 26, 26, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .error-content {
+      background: #2d2d2d;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 500px;
       text-align: center;
-      font-size: 1.12rem;
-      margin: 20px 0 8px 0;
-      color: #2577c3;
+      box-shadow: 0 6px 38px rgba(0, 0, 0, 0.5);
+    }
+    .error-content h3 {
+      color: #ff4444;
+      font-size: 1.5rem;
+      margin: 0 0 20px 0;
+    }
+    .error-content p {
+      color: #ffffff;
+      font-size: 1.1rem;
+      margin: 0 0 20px 0;
+      line-height: 1.5;
+    }
+    .error-image {
+      max-width: 100%;
+      max-height: 300px;
+      border-radius: 8px;
+      border: 2px solid #ff4444;
+      margin: 20px 0;
+      object-fit: contain;
+    }
+    .error-btn {
+      background: #7ed321;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      padding: 12px 30px;
+      cursor: pointer;
       font-weight: bold;
-      letter-spacing: 1px;
+      transition: background 0.18s;
+      display: block;
+      margin: 0 auto;
+    }
+    .error-btn:hover {
+      background: #6bb81d;
+    }
+    .crop-modal {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(26, 26, 26, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+    .crop-content {
+      background: #2d2d2d;
+      border-radius: 8px;
+      padding: 30px;
+      max-width: 600px;
+      text-align: center;
+      box-shadow: 0 6px 38px rgba(0, 0, 0, 0.5);
+    }
+    .crop-content h3 {
+      color: #7ed321;
+      font-size: 1.5rem;
+      margin: 0 0 20px 0;
+    }
+    .crop-container {
+      position: relative;
+      max-width: 500px;
+      margin: 0 auto 20px;
+    }
+    .crop-canvas {
+      max-width: 100%;
+      border-radius: 8px;
+      border: 2px solid #7ed321;
+    }
+    .crop-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+    .crop-btn {
+      background: #7ed321;
+      color: #1a1a1a;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      padding: 12px 30px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.18s;
+    }
+    .crop-btn:hover {
+      background: #6bb81d;
+    }
+    .crop-btn.cancel {
+      background: #3d3d3d;
+      color: #ffffff;
+    }
+    .crop-btn.cancel:hover {
+      background: #4d4d4d;
     }
   </style>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
-  <div id="faceApiStatus">Loading Face API...</div>
   <div id="editProfileModal" class="ep-modal">
     <form id="editProfileForm" class="ep-form" autocomplete="off">
       <h2>Edit Profile</h2>
       <div class="ep-avatar-box">
-        <img src="https://via.placeholder.com/82" id="ep-avatar-preview" class="ep-avatar" alt="Avatar"/>
+        <div class="avatar-wrapper">
+          <img src="" id="ep-avatar-preview" class="ep-avatar" alt="Avatar"/>
+          <div id="faceDetectedBadge" class="face-badge" style="display:none;">✓ Face Detected</div>
+        </div>
         <div class="avatar-actions">
           <input type="file" id="editAvatarFile" accept="image/*"/>
           <button type="button" class="avatar-btn" id="cameraBtn">Use Camera</button>
@@ -193,31 +342,204 @@
     </form>
   </div>
   <div id="profileDisplay" style="display:none;"></div>
+  
+  <!-- Error Modal -->
+  <div id="errorModal" class="error-modal">
+    <div class="error-content">
+      <h3>⚠️ No Face Detected</h3>
+      <p>No face detected in uploaded image. Please upload a clear photo of your face.</p>
+      <img id="errorImage" class="error-image" alt="Rejected image"/>
+      <button class="error-btn" onclick="closeErrorModal()">Try Again</button>
+    </div>
+  </div>
+
+  <!-- Crop Modal -->
+  <div id="cropModal" class="crop-modal">
+    <div class="crop-content">
+      <h3>Crop Your Image</h3>
+      <div class="crop-container">
+        <canvas id="cropCanvas"></canvas>
+      </div>
+      <div class="crop-buttons">
+        <button class="crop-btn cancel" onclick="cancelCrop()">Cancel</button>
+        <button class="crop-btn" onclick="applyCrop()">Apply</button>
+      </div>
+    </div>
+  </div>
+  
   <script>
-    let finalAvatarDataUrl = 'https://via.placeholder.com/82';
+    // Default placeholder avatar (gray circle)
+    const defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="82" height="82"%3E%3Ccircle cx="41" cy="41" r="40" fill="%231a1a1a" stroke="%237ed321" stroke-width="2"/%3E%3Ctext x="41" y="50" font-size="24" fill="%237ed321" text-anchor="middle" font-family="Arial"%3E%3F%3C/text%3E%3C/svg%3E';
+    let finalAvatarDataUrl = defaultAvatar;
     let lastName = '';
     let lastEmail = '';
     let lastUserType = 'Student';
     let stream = null;
     let modelsLoaded = false;
+    let cropImageData = null;
+    let cropStartX = 0;
+    let cropStartY = 0;
+    let cropEndX = 0;
+    let cropEndY = 0;
+    let isDragging = false;
 
     async function loadFaceApiModels() {
       if (!modelsLoaded) {
-        await faceapi.nets.tinyFaceDetector.load('models/');
+        const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
         modelsLoaded = true;
       }
     }
 
-    // Face API Loaded Status
-    document.addEventListener('DOMContentLoaded', async function() {
-      if (window.faceapi) {
-        document.getElementById('faceApiStatus').textContent = 'Face API loaded!';
-        document.getElementById('faceApiStatus').style.color = '#20b16a';
-      } else {
-        document.getElementById('faceApiStatus').textContent = 'Face API not loaded!';
-        document.getElementById('faceApiStatus').style.color = '#c0392b';
+    function showErrorModal(imageUrl) {
+      document.getElementById('errorImage').src = imageUrl;
+      document.getElementById('errorModal').style.display = 'flex';
+    }
+
+    window.closeErrorModal = function() {
+      document.getElementById('errorModal').style.display = 'none';
+    }
+
+    function showCropModal(imageUrl) {
+      const canvas = document.getElementById('cropCanvas');
+      const ctx = canvas.getContext('2d');
+      const img = new Image();
+      
+      img.onload = function() {
+        const maxWidth = 500;
+        const scale = Math.min(1, maxWidth / img.width);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        
+        cropImageData = { img, scale };
+        cropStartX = canvas.width * 0.2;
+        cropStartY = canvas.height * 0.2;
+        cropEndX = canvas.width * 0.8;
+        cropEndY = canvas.height * 0.8;
+        
+        drawCropOverlay();
+        document.getElementById('cropModal').style.display = 'flex';
+      };
+      
+      img.src = imageUrl;
+    }
+
+    function drawCropOverlay() {
+      const canvas = document.getElementById('cropCanvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Clear and redraw the full image
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(cropImageData.img, 0, 0, canvas.width, canvas.height);
+      
+      // Draw semi-transparent overlay on the entire canvas
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Clear the overlay in the crop area to show the original image
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.fillStyle = 'rgba(0, 0, 0, 1)';
+      ctx.fillRect(cropStartX, cropStartY, cropEndX - cropStartX, cropEndY - cropStartY);
+      
+      // Reset composite operation and draw the crop area again
+      ctx.globalCompositeOperation = 'source-over';
+      const scale = cropImageData.scale;
+      const sourceX = cropStartX / scale;
+      const sourceY = cropStartY / scale;
+      const sourceWidth = (cropEndX - cropStartX) / scale;
+      const sourceHeight = (cropEndY - cropStartY) / scale;
+      
+      ctx.drawImage(
+        cropImageData.img,
+        sourceX, sourceY, sourceWidth, sourceHeight,
+        cropStartX, cropStartY, cropEndX - cropStartX, cropEndY - cropStartY
+      );
+      
+      // Draw the green border
+      ctx.strokeStyle = '#7ed321';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(cropStartX, cropStartY, cropEndX - cropStartX, cropEndY - cropStartY);
+    }
+
+    document.getElementById('cropCanvas').addEventListener('mousedown', function(e) {
+      const rect = this.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      cropStartX = x;
+      cropStartY = y;
+      isDragging = true;
+    });
+
+    document.getElementById('cropCanvas').addEventListener('mousemove', function(e) {
+      if (!isDragging) return;
+      
+      const rect = this.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      cropEndX = x;
+      cropEndY = y;
+      
+      drawCropOverlay();
+    });
+
+    document.getElementById('cropCanvas').addEventListener('mouseup', function() {
+      isDragging = false;
+      
+      if (cropStartX > cropEndX) {
+        [cropStartX, cropEndX] = [cropEndX, cropStartX];
+      }
+      if (cropStartY > cropEndY) {
+        [cropStartY, cropEndY] = [cropEndY, cropStartY];
       }
     });
+
+    window.cancelCrop = function() {
+      document.getElementById('cropModal').style.display = 'none';
+      cropImageData = null;
+    }
+
+    window.applyCrop = async function() {
+      const canvas = document.getElementById('cropCanvas');
+      const cropCanvas = document.createElement('canvas');
+      const ctx = cropCanvas.getContext('2d');
+      
+      const scale = 1 / cropImageData.scale;
+      const sourceX = cropStartX * scale;
+      const sourceY = cropStartY * scale;
+      const sourceWidth = (cropEndX - cropStartX) * scale;
+      const sourceHeight = (cropEndY - cropStartY) * scale;
+      
+      cropCanvas.width = sourceWidth;
+      cropCanvas.height = sourceHeight;
+      
+      ctx.drawImage(
+        cropImageData.img,
+        sourceX, sourceY, sourceWidth, sourceHeight,
+        0, 0, sourceWidth, sourceHeight
+      );
+      
+      const croppedImageUrl = cropCanvas.toDataURL('image/png');
+      
+      await loadFaceApiModels();
+      const img = new Image();
+      img.src = croppedImageUrl;
+      img.onload = async function() {
+        const detections = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions());
+        if (detections.length === 0) {
+          document.getElementById('cropModal').style.display = 'none';
+          showErrorModal(croppedImageUrl);
+          return;
+        }
+        
+        document.getElementById('ep-avatar-preview').src = croppedImageUrl;
+        finalAvatarDataUrl = croppedImageUrl;
+        document.getElementById('faceDetectedBadge').style.display = 'block';
+        document.getElementById('cropModal').style.display = 'none';
+      };
+    }
 
     // File upload with face detection
     document.getElementById('editAvatarFile').addEventListener('change', async function(e) {
@@ -225,19 +547,8 @@
       if (!file) return;
       const reader = new FileReader();
       reader.onload = async function(evt) {
-        const img = new Image();
-        img.src = evt.target.result;
-        img.onload = async function() {
-          await loadFaceApiModels();
-          const detections = await faceapi.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions());
-          if (detections.length === 0) {
-            alert('No face detected in uploaded image. Please upload a clear photo of your face.');
-            document.getElementById('editAvatarFile').value = '';
-            return;
-          }
-          document.getElementById('ep-avatar-preview').src = evt.target.result;
-          finalAvatarDataUrl = evt.target.result;
-        };
+        showCropModal(evt.target.result);
+        document.getElementById('editAvatarFile').value = '';
       };
       reader.readAsDataURL(file);
     });
@@ -260,25 +571,21 @@
     document.getElementById('captureBtn').addEventListener('click', async function() {
       const video = document.getElementById('cameraPreview');
       const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth || 180;
-      canvas.height = video.videoHeight || 120;
+      canvas.width = video.videoWidth || 360;
+      canvas.height = video.videoHeight || 270;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      await loadFaceApiModels();
-      const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions());
-      if (detections.length === 0) {
-        alert('No face detected. Please take a clear photo of your face.');
-        return;
-      }
-      finalAvatarDataUrl = canvas.toDataURL('image/png');
-      document.getElementById('ep-avatar-preview').src = finalAvatarDataUrl;
+      const capturedImage = canvas.toDataURL('image/png');
+      
       document.getElementById('cameraArea').style.display = 'none';
       document.getElementById('cameraBtn').style.display = '';
       if (stream) {
         stream.getTracks().forEach(track => track.stop());
         stream = null;
       }
+      
+      showCropModal(capturedImage);
     });
 
     // Close camera preview
@@ -356,12 +663,14 @@
       }
     }
 
-    // Set initial values
-    document.getElementById('editFullName').value = '';
-    document.getElementById('editEmail').value = '';
-    document.getElementById('editUserType').value = 'Student';
-    document.getElementById('ep-avatar-preview').src = finalAvatarDataUrl;
+    // Set initial values on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('editFullName').value = '';
+      document.getElementById('editEmail').value = '';
+      document.getElementById('editUserType').value = 'Student';
+      document.getElementById('ep-avatar-preview').src = defaultAvatar;
+      document.getElementById('faceDetectedBadge').style.display = 'none';
+    });
   </script>
 </body>
 </html>
-

@@ -1321,15 +1321,22 @@
                             <h2 class="text-2xl font-bold text-gray-800 capitalize">${currentTable.replace('_', ' ')} ${showingArchived ? '(Archived)' : ''}</h2>
                         </div>
                         
-                        <div class="flex items-center gap-3 flex-wrap justify-end">
+                        <div class="flex items-center gap-4 flex-wrap justify-end">
             `;
 
             if (isArchivable) {
                 tableHTML += `
-                            <div class="flex items-center gap-2">
-                                <input type="checkbox" id="showArchivedToggle" onchange="toggleShowArchived(this.checked)" ${showingArchived ? 'checked' : ''} class="h-4 w-4 rounded" style="accent-color: #9FE870;">
-                                <label for="showArchivedToggle" class="text-sm font-medium text-gray-700">Show Archived</label>
-                            </div>
+                    <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="showArchivedToggle" onchange="toggleShowArchived(this.checked)" ${showingArchived ? 'checked' : ''} class="h-4 w-4 rounded" style="accent-color: #9FE870;">
+                            <label for="showArchivedToggle" class="text-sm font-medium text-gray-700">Show Archived</label>
+                        </div>
+                        
+                        <div class="flex items-center gap-2">
+                            <input type="checkbox" id="autoDeleteToggle" class="h-4 w-4 rounded" style="accent-color: #EF4444;">
+                            <label for="autoDeleteToggle" class="text-sm font-medium text-gray-700">Auto-delete &gt; 24h</label>
+                        </div>
+                    </div>
                 `;
             }
 
@@ -1524,6 +1531,28 @@
         
             tableHTML += '</div>';
             document.getElementById('tableSection').innerHTML = tableHTML;
+
+            // --- NEW: Add logic for the auto-delete toggle ---
+            if (isArchivable) {
+                const autoDeleteToggle = document.getElementById('autoDeleteToggle');
+                if (autoDeleteToggle) {
+                    // 1. Set its initial state from localStorage
+                    const isAutoDeleteEnabled = localStorage.getItem('autoDeleteEnabled') === 'true';
+                    autoDeleteToggle.checked = isAutoDeleteEnabled;
+                    
+                    // 2. Add event listener
+                    autoDeleteToggle.addEventListener('change', (e) => {
+                        const isChecked = e.target.checked;
+                        localStorage.setItem('autoDeleteEnabled', isChecked);
+                        
+                        if (isChecked) {
+                            alert('Automatic 24-hour deletion is now ON.\nOld archived items will be cleared when you next load the page.');
+                        } else {
+                            alert('Automatic 24-hour deletion is now OFF.');
+                        }
+                    });
+                }
+            }
         }
 
         // Toggle password visibility in table
@@ -2147,12 +2176,14 @@
 
         // Initialize
         window.addEventListener('DOMContentLoaded', async () => {
-            setIcon(document.documentElement.classList.contains('light')); 
+            setIcon(document.documentElement.classList.contains('dark')); 
             
             document.getElementById('tableSearchInput').addEventListener('input', (e) => handleSearch(e.target.value));
 
-            // --- NEW: Run auto-cleanup on page load ---
-            await autoClearOldArchives();
+            // --- MODIFIED: Run auto-cleanup only if toggle is enabled ---
+            if (localStorage.getItem('autoDeleteEnabled') === 'true') {
+                await autoClearOldArchives();
+            }
             
             // Now load the dashboard
             await showDashboard();
@@ -2160,4 +2191,3 @@
     </script>
 </body>
 </html>
-

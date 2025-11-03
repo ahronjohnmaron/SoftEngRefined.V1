@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
         tailwind.config = {
@@ -728,6 +729,72 @@
         }
         .dark .password-toggle { color: #666; }
         .dark .password-toggle:hover { color: #9FE870; }
+
+        /* --- NEW: Password requirements helper text --- */
+        .password-requirements {
+            font-size: 0.75rem;
+            color: #666;
+            padding-left: 0.25rem;
+            margin-top: -0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .dark .password-requirements {
+            color: #AAAAAA;
+        }
+        .password-requirements ul {
+            list-style-type: none; /* Removed bullet points */
+            padding-left: 0;
+            margin-top: 0.25rem;
+            space-y: 1;
+        }
+        /* --- NEW: Live validation requirement styling --- */
+        .password-requirements ul li {
+            transition: all 0.3s ease;
+            color: #DC2626; /* Default state (red) */
+            font-weight: 500;
+        }
+        .dark .password-requirements ul li {
+            color: #F87171; /* Lighter red for dark mode */
+        }
+        .password-requirements ul li.met {
+            color: #22C55E; /* Green color for 'met' */
+        }
+        .dark .password-requirements ul li.met {
+            color: #9FE870; /* Brighter green for dark mode */
+        }
+        .password-requirements ul li i {
+            width: 1.25em; /* Align icons */
+        }
+        
+        /* --- NEW: Password input container and toggle icon --- */
+        .password-input-container {
+            position: relative;
+        }
+        .password-input-toggle {
+            position: absolute;
+            right: 0.75rem; /* 12px */
+            /* Vertically center the icon */
+            top: 0;
+            bottom: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            /* Adjust top position slightly for text inputs */
+            padding-bottom: 2px; 
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+        }
+        .password-input-toggle:hover {
+            color: #9FE870;
+        }
+        .dark .password-input-toggle {
+            color: #666;
+        }
+        .dark .password-input-toggle:hover {
+            color: #9FE870;
+        }
+
     </style>
 </head>
 <body class="bg-gray-100">
@@ -827,7 +894,6 @@
         let currentPage = 1;
         const itemsPerPage = 10;
         let currentSearchTerm = ''; 
-        // --- MODIFIED: Default sort is now "Newest" (created_at Descending)
         let currentSort = { column: 'created_at', ascending: false }; 
         let charts = {};
         let showingArchived = false; 
@@ -872,7 +938,6 @@
         // Load counts on page load
         async function loadCounts() {
             try {
-                // MODIFIED: admin_user is not a visible table, removed it from count
                 const allTables = ['notifications', 'members', 'announcements', 'admins'];
                 const counts = {};
 
@@ -913,7 +978,6 @@
             showingArchived = false; 
             currentSearchTerm = ''; 
             document.getElementById('tableSearchInput').value = ''; 
-            // --- MODIFIED: Reset sort to "Newest" (created_at Descending)
             currentSort = { column: 'created_at', ascending: false }; 
 
             if (tableName === 'dashboard') {
@@ -1083,7 +1147,6 @@
             showingArchived = false; 
             currentSearchTerm = ''; 
             document.getElementById('tableSearchInput').value = ''; 
-            // --- MODIFIED: Reset sort to "Newest" (created_at Descending)
             currentSort = { column: 'created_at', ascending: false }; 
 
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
@@ -1139,7 +1202,7 @@
             renderTable(); 
         }
 
-        // --- NEW: Function to toggle sort by created_at ---
+        // Function to toggle sort by created_at
         function toggleDateSort() {
             if (currentSort.column === 'created_at') {
                 // Already sorting by date, just flip direction
@@ -1217,7 +1280,7 @@
                 let valA = a[currentSort.column];
                 let valB = b[currentSort.column];
 
-                // Handle string dates (created_at)
+                // MODIFIED: Handle only _at timestamp columns for sorting
                 if (currentSort.column.includes('_at') && valA && valB) {
                     valA = new Date(valA).getTime();
                     valB = new Date(valB).getTime();
@@ -1258,7 +1321,7 @@
                             <h2 class="text-2xl font-bold text-gray-800 capitalize">${currentTable.replace('_', ' ')} ${showingArchived ? '(Archived)' : ''}</h2>
                         </div>
                         
-                        <div class="flex items-center gap-4">
+                        <div class="flex items-center gap-3 flex-wrap justify-end">
             `;
 
             if (isArchivable) {
@@ -1270,7 +1333,7 @@
                 `;
             }
 
-            // --- NEW: Add Sort Button ---
+            // --- Add Sort Button ---
             let headers = [];
             if (currentData.length > 0) { headers = Object.keys(currentData[0]); }
             const hasCreatedAt = headers.includes('created_at');
@@ -1291,25 +1354,36 @@
                     </button>
                 `;
             }
-            // --- END NEW Sort Button ---
-
+            
+            // --- Export Button ---
             tableHTML += `
-                            <button onclick="openAddModal()" class="w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-colors ${showingArchived ? 'hidden' : 'flex'} items-center justify-center gap-2" style="background-color: #9FE870; color: #000;">
-                                <i class="fas fa-plus"></i>
-                                <span>Add New</span>
-                            </button>
+                <button onclick="exportDataToCSV()" class="w-full sm:w-auto px-4 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600" title="Export current view to CSV">
+                    <i class="fas fa-file-export"></i>
+                    <span class="hidden sm:inline">Export CSV</span>
+                </button>
+            `;
+
+            // --- REMOVED: Clear Archive Button (now automatic) ---
+
+            // "Add New" button (conditionally hidden if viewing archive)
+            tableHTML += `
+                                <button onclick="openAddModal()" class="w-full sm:w-auto px-6 py-3 rounded-lg font-semibold transition-colors ${showingArchived ? 'hidden' : 'flex'} items-center justify-center gap-2" style="background-color: #9FE870; color: #000;">
+                                    <i class="fas fa-plus"></i>
+                                    <span>Add New</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="table-container">
-                        <table class="w-full">
-                            <thead>
-                                <tr>
-                                    <th class="px-4 py-3 text-left col-number">#</th>
+                        <div class="table-container">
+                            <table class="w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="px-4 py-3 text-left col-number">#</th>
             `;
 
             // Generate table headers (headers already defined above)
             if (headers.length > 0) {
                 headers.forEach(key => {
+                    // MODIFIED: Hide archived, archived_at
                     if (key !== 'archived' && key !== 'archived_at') {
                         const isIdCol = key === 'id';
                         tableHTML += `
@@ -1325,13 +1399,14 @@
             }
 
             tableHTML += `
-                                </tr>
-                            </thead>
-                            <tbody>
+                                    </tr>
+                                </thead>
+                                <tbody>
             `;
 
             // Handle "No data"
             if (pageData.length === 0) {
+                // MODIFIED: Hide archived, archived_at
                 const colCount = headers.filter(h => h !== 'archived' && h !== 'archived_at').length + 2; 
                 tableHTML += `
                     <tr>
@@ -1364,7 +1439,8 @@
                         } else {
                             const fullText = value !== null ? String(value) : '';
                             const truncated = truncateText(fullText, 100);
-                            const needsTruncation = fullText.length > 100 && key !== 'id'; // Don't truncate ID
+                            // MODIFIED: Don't truncate dates
+                            const needsTruncation = fullText.length > 100 && key !== 'id' && !key.includes('_at');
                             
                             if (needsTruncation) {
                                 tableHTML += `
@@ -1450,7 +1526,7 @@
             document.getElementById('tableSection').innerHTML = tableHTML;
         }
 
-        // Toggle password visibility
+        // Toggle password visibility in table
         function togglePassword(id, realPassword) {
             const textElement = document.querySelector(`.password-text-${id}`);
             const icon = event.target;
@@ -1465,6 +1541,26 @@
                 icon.classList.add('fa-eye');
             }
         }
+
+        // --- NEW: Toggle password visibility in modal form ---
+        function togglePasswordVisibility(iconElement) {
+            const container = iconElement.closest('.password-input-container');
+            if (!container) return;
+
+            const input = container.querySelector('input');
+            if (!input) return;
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                iconElement.classList.remove('fa-eye');
+                iconElement.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                iconElement.classList.remove('fa-eye-slash');
+                iconElement.classList.add('fa-eye');
+            }
+        }
+
 
         // Change page
         function changePage(page) {
@@ -1483,6 +1579,81 @@
             
             currentPage = page;
             renderTable(); 
+        }
+
+        // --- NEW: Password Validation Function ---
+        /**
+         * Validates a password against the defined rules.
+         * @param {string} password - The password to validate.
+         * @returns {string[]} An array of error messages. Empty if valid.
+         */
+        function validatePassword(password) {
+            const errors = [];
+            if (password.length < 8) {
+                errors.push('At least 8 characters');
+            }
+            if (!/[A-Z]/.test(password)) {
+                errors.push('At least 1 uppercase letter (A-Z)');
+            }
+            if (!/[a-z]/.test(password)) {
+                errors.push('At least 1 lowercase letter (a-z)');
+            }
+            if (!/[0-9]/.test(password)) {
+                errors.push('At least 1 number (0-9)');
+            }
+            if (!/[!@#$%^&*]/.test(password)) {
+                errors.push('At least 1 special character (!@#$%^&*)');
+            }
+            return errors;
+        }
+
+        // --- NEW: Live Password Validation Feedback ---
+        function validatePasswordLive(password) {
+            // Get all requirement li elements from the currently active modal
+            const modal = document.getElementById('modal');
+            const reqLength = modal.querySelector('#req-length');
+            const reqUpper = modal.querySelector('#req-upper');
+            const reqLower = modal.querySelector('#req-lower');
+            const reqNumber = modal.querySelector('#req-number');
+            const reqSpecial = modal.querySelector('#req-special');
+
+            // Helper function to update the requirement item
+            const updateReq = (element, isMet) => {
+                if (!element) return;
+                const icon = element.querySelector('i');
+                if (isMet) {
+                    element.classList.add('met');
+                    icon.classList.remove('fa-times', 'text-red-500', 'dark:text-red-400');
+                    icon.classList.add('fa-check', 'text-green-500', 'dark:text-green-400');
+                } else {
+                    element.classList.remove('met');
+                    icon.classList.remove('fa-check', 'text-green-500', 'dark:text-green-400');
+                    icon.classList.add('fa-times', 'text-red-500', 'dark:text-red-400');
+                }
+            };
+
+            // Check each requirement
+            updateReq(reqLength, password.length >= 8);
+            updateReq(reqUpper, /[A-Z]/.test(password));
+            updateReq(reqLower, /[a-z]/.test(password));
+            updateReq(reqNumber, /[0-9]/.test(password));
+            updateReq(reqSpecial, /[!@#$%^&*]/.test(password));
+        }
+
+        // --- NEW: Helper function to build password requirement list HTML ---
+        function getPasswordRequirementsHTML() {
+            return `
+                <div class="password-requirements">
+                    <span class="text-sm font-semibold">Requirements:</span>
+                    <ul class="mt-1 space-y-1">
+                        <li id="req-length"><i class="fas fa-times mr-2 text-red-500 dark:text-red-400"></i>At least 8 characters</li>
+                        <li id="req-upper"><i class="fas fa-times mr-2 text-red-500 dark:text-red-400"></i>At least 1 uppercase (A-Z)</li>
+                        <li id="req-lower"><i class="fas fa-times mr-2 text-red-500 dark:text-red-400"></i>At least 1 lowercase (a-z)</li>
+                        <li id="req-number"><i class="fas fa-times mr-2 text-red-500 dark:text-red-400"></i>At least 1 number (0-9)</li>
+                        <li id="req-special"><i class="fas fa-times mr-2 text-red-500 dark:text-red-400"></i>At least 1 special character (!@#$%^&*)</li>
+                    </ul>
+                </div>
+            `;
         }
 
         // Open add modal
@@ -1507,8 +1678,10 @@
 
             if (sampleKeys.length > 0) {
                 sampleKeys.forEach(key => {
+                    // MODIFIED: Hide internal columns
                     if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'created_at') { 
                         const isTextArea = key === 'content' || key === 'message';
+                        const isPassword = key.toLowerCase().includes('password');
                         
                         if (isTextArea) {
                             form.innerHTML += `
@@ -1518,16 +1691,32 @@
                                         class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"></textarea>
                                 </div>
                             `;
+                        } else if (isPassword) {
+                            form.innerHTML += `
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                    <div class="password-input-container">
+                                        <input type="password" 
+                                               name="${key}" 
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent pr-10"
+                                               oninput="validatePasswordLive(this.value)">
+                                        <i class="fas fa-eye password-input-toggle" onclick="togglePasswordVisibility(this)"></i>
+                                    </div>
+                                </div>
+                            `;
                         } else {
                             form.innerHTML += `
                                 <div>
                                     <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
-                                    <input type="${key.toLowerCase().includes('password') ? 'password' : 'text'}" 
-                                            name="${key}" 
-                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-                                            ${key.toLowerCase().includes('email') ? 'type="email"' : ''}>
+                                    <input type="${key.toLowerCase().includes('email') ? 'email' : 'text'}" 
+                                           name="${key}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
                                 </div>
                             `;
+                        }
+
+                        if (isPassword) {
+                            form.innerHTML += getPasswordRequirementsHTML();
                         }
                     }
                 });
@@ -1545,6 +1734,7 @@
             `;
 
             document.getElementById('modal').classList.add('active');
+            validatePasswordLive('');
         }
 
         // Open edit modal
@@ -1557,31 +1747,48 @@
             form.innerHTML = '';
 
             Object.entries(row).forEach(([key, value]) => {
+                // MODIFIED: Hide internal columns
                 if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'created_at') {
                     const isTextArea = key === 'content' || key === 'message';
+                    const isPassword = key.toLowerCase().includes('password');
                     const safeValue = value !== null ? String(value).replace(/"/g, '&quot;') : '';
 
                     if (isTextArea) {
-                         form.innerHTML += `
+                           form.innerHTML += `
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
                                 <textarea name="${key}" rows="4"
                                     class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">${safeValue}</textarea>
                             </div>
                         `;
+                    } else if (isPassword) {
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <div class="password-input-container">
+                                    <input type="password" 
+                                           name="${key}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent pr-10"
+                                           oninput="validatePasswordLive(this.value)"
+                                           placeholder="Leave blank to keep same password">
+                                    <i class="fas fa-eye password-input-toggle" onclick="togglePasswordVisibility(this)"></i>
+                                </div>
+                            </div>
+                        `;
                     } else {
                         form.innerHTML += `
                             <div>
                                 <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
-                                <input type="${key.toLowerCase().includes('password') ? 'password' : 'text'}" 
-                                        name="${key}" 
-                                        value="${safeValue}"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent"
-                                        ${key.toLowerCase().includes('email') ? 'type="email"' : ''}
-                                        ${key.toLowerCase().includes('password') ? 'placeholder="Leave blank to keep same password"' : ''}>
+                                <input type="${key.toLowerCase().includes('email') ? 'email' : 'text'}" 
+                                       name="${key}" 
+                                       value="${safeValue}"
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
                             </div>
                         `;
                     }
+                     if (isPassword) {
+                        form.innerHTML += getPasswordRequirementsHTML();
+                     }
                 }
             });
 
@@ -1598,6 +1805,7 @@
             `;
 
             document.getElementById('modal').classList.add('active');
+            validatePasswordLive('');
         }
 
         // Save new entry
@@ -1609,12 +1817,34 @@
                 
                 formData.forEach((value, key) => data[key] = value);
                 
+                // --- Validation Logic ---
+                for (const key in data) {
+                    const value = data[key];
+
+                    if (key.toLowerCase().includes('password')) {
+                        // 1. Validate Password
+                        const passwordErrors = validatePassword(value);
+                        if (passwordErrors.length > 0) {
+                            alert('Password is not valid:\n\n' + passwordErrors.join('\n'));
+                            return; // Stop the save
+                        }
+                    } else if (currentTable !== 'members') {
+                        // 2. Validate non-blank fields (for all tables EXCEPT members)
+                        if (String(value).trim() === '') {
+                            alert(`Error: The '${key}' field cannot be blank.`);
+                            return; // Stop the save
+                        }
+                    }
+                }
+                // --- End Validation Logic ---
+                
                 if (archivableTables.includes(currentTable)) {
                     data.archived = false;
                     data.archived_at = null; 
                 }
                 
                 data.created_at = new Date().toISOString();
+                // REMOVED last_modified
 
                 const { error } = await supabase.from(currentTable).insert([data]);
                 if (error) throw error;
@@ -1641,9 +1871,33 @@
                     else data[key] = value;
                 });
                 
-                if (data.hasOwnProperty('password') && data.password === '') {
-                    delete data.password;
+                // --- Validation Logic ---
+                for (const key in data) {
+                    const value = data[key];
+
+                    if (key.toLowerCase().includes('password')) {
+                        // 1. Validate Password (if user is changing it)
+                        if (String(value).trim() !== '') {
+                            const passwordErrors = validatePassword(value);
+                            if (passwordErrors.length > 0) {
+                                alert('New password is not valid:\n\n' + passwordErrors.join('\n'));
+                                return; // Stop the save
+                            }
+                        } else {
+                            // User left password blank, so don't update it
+                            delete data.password;
+                        }
+                    } else if (currentTable !== 'members') {
+                        // 2. Validate non-blank fields (for all tables EXCEPT members)
+                        if (String(value).trim() === '') {
+                            alert(`Error: The '${key}' field cannot be blank.`);
+                            return; // Stop the save
+                        }
+                    }
                 }
+                // --- End Validation Logic ---
+
+                // REMOVED last_modified
 
                 const { error } = await supabase.from(currentTable).update(data).eq('id', id);
                 if (error) throw error;
@@ -1662,9 +1916,15 @@
             if (!confirm('Are you sure you want to archive this record?')) return;
 
             try {
+                // MODIFIED: Removed last_modified
+                const updateData = { 
+                    archived: true, 
+                    archived_at: new Date().toISOString()
+                };
+                
                 const { error } = await supabase
                     .from(currentTable)
-                    .update({ archived: true, archived_at: new Date().toISOString() }) 
+                    .update(updateData) 
                     .eq('id', id);
 
                 if (error) throw error;
@@ -1681,9 +1941,15 @@
         async function restoreRow(id) {
             if (!confirm('Are you sure you want to restore this record?')) return;
             try {
+                // MODIFIED: Removed last_modified
+                const updateData = { 
+                    archived: false, 
+                    archived_at: null
+                };
+
                 const { error } = await supabase
                     .from(currentTable)
-                    .update({ archived: false, archived_at: null }) 
+                    .update(updateData) 
                     .eq('id', id);
 
                 if (error) throw error;
@@ -1715,6 +1981,95 @@
                 alert('Error permanently deleting record. Please try again.');
             }
         }
+
+        // --- NEW: Export data to CSV ---
+        function exportDataToCSV() {
+            // Get the data that is currently processed (filtered and sorted)
+            let processedData = [...currentData];
+            if (currentSearchTerm) {
+                processedData = processedData.filter(row => 
+                    Object.values(row).some(val => 
+                        String(val).toLowerCase().includes(currentSearchTerm)
+                    )
+                );
+            }
+            // Sort data just like in renderTable
+            processedData.sort((a, b) => {
+                let valA = a[currentSort.column];
+                let valB = b[currentSort.column];
+                // MODIFIED: Removed last_modified check
+                if (currentSort.column.includes('_at') && valA && valB) {
+                    valA = new Date(valA).getTime();
+                    valB = new Date(valB).getTime();
+                }
+                let compare = 0;
+                if (typeof valA === 'number' && typeof valB === 'number') {
+                    compare = valA - valB;
+                } else if (valA > valB) {
+                    compare = 1;
+                } else if (valA < valB) {
+                    compare = -1;
+                }
+                if (valA == null && valB != null) compare = 1;
+                if (valA != null && valB == null) compare = -1;
+                if (valA == null && valB == null) compare = 0;
+                return currentSort.ascending ? compare : compare * -1; 
+            });
+            
+            if (processedData.length === 0) {
+                alert('No data in the current view to export.');
+                return;
+            }
+
+            try {
+                // Use PapaParse to convert JSON data to CSV string
+                const csv = Papa.unparse(processedData);
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement('a');
+                const url = URL.createObjectURL(blob);
+                
+                link.setAttribute('href', url);
+                // Create a dynamic filename
+                const filename = `${currentTable}_${showingArchived ? 'archived' : 'active'}_${new Date().toISOString().split('T')[0]}.csv`;
+                link.setAttribute('download', filename);
+                link.style.visibility = 'hidden';
+                
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+            } catch (error) {
+                console.error('Error exporting to CSV:', error);
+                alert('An error occurred while exporting the data.');
+            }
+        }
+
+        // --- NEW: AUTOMATICALLY Clear archive items older than 24 hours ---
+        async function autoClearOldArchives() {
+            console.log('Running automatic archive cleanup...');
+            // Calculate the timestamp for 24 hours ago
+            const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+            
+            for (const table of archivableTables) {
+                try {
+                    // Delete rows that are archived AND have an archived_at date *less than* (older than) 24 hours ago
+                    const { error } = await supabase
+                        .from(table)
+                        .delete()
+                        .eq('archived', true)
+                        .lt('archived_at', twentyFourHoursAgo); // <-- This uses the archived_at column as requested
+
+                    if (error) {
+                        console.error(`Error clearing archive for ${table}:`, error.message);
+                    } else {
+                        console.log(`Old archive cleared for ${table}.`);
+                    }
+                } catch (error) {
+                    console.error(`Failed to run archive cleanup for ${table}:`, error);
+                }
+            }
+        }
+
 
         // Close modal
         function closeModal() {
@@ -1796,6 +2151,10 @@
             
             document.getElementById('tableSearchInput').addEventListener('input', (e) => handleSearch(e.target.value));
 
+            // --- NEW: Run auto-cleanup on page load ---
+            await autoClearOldArchives();
+            
+            // Now load the dashboard
             await showDashboard();
         });
     </script>

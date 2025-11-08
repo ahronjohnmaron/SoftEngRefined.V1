@@ -51,6 +51,32 @@
           max-height: 90vh;
           overflow: auto;
         }
+        .camera-modal {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(26, 26, 26, 0.95);
+          display: none;
+          align-items: center;
+          justify-content: center;
+          z-index: 9999;
+        }
+        .camera-modal-content {
+          background: #2d2d2d;
+          border-radius: 8px;
+          padding: 30px;
+          max-width: 90vw;
+          max-height: 90vh;
+          overflow: auto;
+        }
+        #cameraVideo {
+          width: 100%;
+          max-width: 640px;
+          border-radius: 8px;
+          border: 2px solid #7ed321;
+        }
     </style>
 </head>
 <body class="text-white min-h-screen p-6">
@@ -63,6 +89,12 @@
         <div class="rounded-lg p-6 card-shadow" style="background-color: #2d2d2d;">
           <label for="imageInput" class="block font-semibold mb-3 text-lg" style="color: #7ed321;">Upload Image</label>
           <input type="file" id="imageInput" accept="image/*" class="mb-4 w-full text-sm rounded border px-3 py-2 text-white input-shadow" style="background-color: #1a1a1a; border-color: #3d3d3d;">
+          
+          <div class="flex gap-3 mb-4">
+            <button id="cameraBtn" class="flex-1 px-4 py-3 rounded font-semibold transition-all hover:opacity-90" style="background-color: #3d3d3d; color: #ffffff;">
+              📷 Use Camera
+            </button>
+          </div>
           
           <div class="flex gap-3">
             <button id="extractText" class="flex-1 px-4 py-3 rounded font-bold disabled:opacity-50 transition-all hover:opacity-90" style="background-color: #7ed321; color: #1a1a1a; box-shadow: 0 4px 12px rgba(126, 211, 33, 0.3);" disabled>Extract Text</button>
@@ -127,6 +159,21 @@
     </div>
   </div>
 
+  <!-- Camera Modal -->
+  <div id="cameraModal" class="camera-modal">
+    <div class="camera-modal-content card-shadow">
+      <h2 class="text-2xl font-bold mb-4" style="color: #7ed321;">Take a Photo</h2>
+      <div class="mb-4 text-center">
+        <video id="cameraVideo" autoplay playsinline></video>
+        <canvas id="cameraCanvas" style="display: none;"></canvas>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="cancelCameraBtn" class="px-6 py-3 rounded font-semibold transition-all hover:opacity-90" style="background-color: #3d3d3d; color: #ffffff;">Cancel</button>
+        <button id="captureBtn" class="px-6 py-3 rounded font-semibold transition-all hover:opacity-90" style="background-color: #7ed321; color: #1a1a1a; box-shadow: 0 4px 12px rgba(126, 211, 33, 0.3);">📸 Capture Photo</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Crop Modal -->
   <div id="cropModal" class="crop-modal">
     <div class="crop-modal-content card-shadow">
@@ -144,9 +191,14 @@
   <script>
     let cropper = null;
     let currentImageBlob = null;
+    let cameraStream = null;
     const imageInput = document.getElementById('imageInput');
     const cropImage = document.getElementById('cropImage');
     const cropBtn = document.getElementById('cropBtn');
+    const cameraBtn = document.getElementById('cameraBtn');
+    const cameraVideo = document.getElementById('cameraVideo');
+    const cameraCanvas = document.getElementById('cameraCanvas');
+    const captureBtn = document.getElementById('captureBtn');
     const extractTextBtn = document.getElementById('extractText');
     const extractedTextPreview = document.getElementById('extractedTextPreview');
     const progressContainer = document.getElementById('progressContainer');
@@ -202,6 +254,64 @@
           if (cropper) cropper.destroy();
         });
       }
+    });
+
+    // Camera functionality
+    cameraBtn.addEventListener('click', async () => {
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' } 
+        });
+        cameraVideo.srcObject = cameraStream;
+        document.getElementById('cameraModal').style.display = 'flex';
+      } catch (err) {
+        statusMsg.innerHTML = "❌ Camera access denied or not available";
+        statusMsg.classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('cancelCameraBtn').addEventListener('click', () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+      }
+      document.getElementById('cameraModal').style.display = 'none';
+    });
+
+    captureBtn.addEventListener('click', () => {
+      const context = cameraCanvas.getContext('2d');
+      cameraCanvas.width = cameraVideo.videoWidth;
+      cameraCanvas.height = cameraVideo.videoHeight;
+      context.drawImage(cameraVideo, 0, 0);
+      
+      cameraCanvas.toBlob(blob => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          cropImage.src = e.target.result;
+          document.getElementById('cameraModal').style.display = 'none';
+          document.getElementById('cropModal').style.display = 'flex';
+          
+          if (cameraStream) {
+            cameraStream.getTracks().forEach(track => track.stop());
+            cameraStream = null;
+          }
+          
+          if (cropper) cropper.destroy();
+          cropper = new Cropper(cropImage, {
+            viewMode: 1,
+            autoCropArea: 1,
+            movable: true,
+            zoomable: true,
+            rotatable: true,
+            scalable: true,
+            background: false,
+            minCropBoxWidth: 100,
+            minCropBoxHeight: 100,
+          });
+          extractTextBtn.disabled = true;
+        };
+        reader.readAsDataURL(blob);
+      });
     });
 
     extractTextBtn.addEventListener('click', async () => {

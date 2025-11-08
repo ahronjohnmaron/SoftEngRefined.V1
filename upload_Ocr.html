@@ -89,6 +89,11 @@
           
           <div class="grid grid-cols-1 gap-4">
             <div>
+              <label class="block mb-2 font-semibold text-base" for="fieldTitle" style="color: #7ed321;">Title</label>
+              <input id="fieldTitle" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d;" autocomplete="off" placeholder="Announcement or event title" />
+            </div>
+            
+            <div>
               <label class="block mb-2 font-semibold text-base" for="fieldWhat" style="color: #7ed321;">What (event/content)</label>
               <textarea id="fieldWhat" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d; height: 180px; resize: vertical;" placeholder="Description of the event or announcement"></textarea>
             </div>
@@ -147,6 +152,7 @@
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
+    const fieldTitle = document.getElementById('fieldTitle');
     const fieldWhat = document.getElementById('fieldWhat');
     const fieldWhen = document.getElementById('fieldWhen');
     const fieldWhere = document.getElementById('fieldWhere');
@@ -227,7 +233,7 @@
         // Call Groq for structured fields:
         const fields = await extractSmartFieldsWithGroq(extractedText);
         
-        if (fields && (fields.what || fields.when || fields.where || fields.why)) {
+        if (fields && (fields.title || fields.what || fields.when || fields.where || fields.why)) {
           statusMsg.innerHTML = "✓ Fields autofilled!";
           statusMsg.classList.remove('hidden');
         } else {
@@ -235,6 +241,7 @@
           statusMsg.classList.remove('hidden');
         }
         
+        fieldTitle.value = fields.title || "";
         fieldWhat.value = fields.what || "";
         fieldWhen.value = fields.when || "";
         fieldWhere.value = fields.where || "";
@@ -258,7 +265,8 @@
 Given this text from an announcement or event poster:
 """${ocrText}"""
 
-Extract and return ONLY a JSON object with these keys (the 4 W's):
+Extract and return ONLY a JSON object with these keys:
+- title: A concise, catchy title for the announcement or event (5-10 words max). This should capture the essence of the event.
 - what: A complete, clear, self-contained summary of the main event or announcement (2-3 sentences minimum). Include the core information, what is being announced, and any key details or requests.
 - when: The date and time of the event (if specified). Include both date and time if available.
 - where: The full location, venue, or institution where the event takes place.
@@ -269,9 +277,11 @@ Important:
 - Return ONLY valid JSON, no markdown, no explanation, no extra text.
 - If a field is not found, use an empty string "".
 - Be comprehensive in the "what" and "why" fields.
+- Make the title engaging and informative.
 
 Example format:
 {
+  "title": "...",
   "what": "...",
   "when": "...",
   "where": "...",

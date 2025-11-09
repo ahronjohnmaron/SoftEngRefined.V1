@@ -4,7 +4,7 @@
     <meta charset="UTF-R">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
-    <title>DCH Dashboard</title>
+    <title>CentraNounceIt DeptHub</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -902,7 +902,7 @@
     <header>
         <div class="logo-section" onclick="showCategory('all-announcement')">
             <img src="CCSICTLOGOCROP.png" alt="Logo" height="50px" width="50px">
-            <span class="logo-text">Department Communication <span>Hub</span></span>
+            <span class="logo-text">CentraNounceIT <span>DeptHub</span></span>
         </div>
         <nav>
             <a href="#" onclick="event.preventDefault(); handleLogout();">Log out</a>
@@ -913,7 +913,11 @@
             <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle theme (Light/Dark)">
                 <i class="fas fa-sun" id="theme-icon"></i>
             </button>
-            <a href="upload_Announcement.html" class="upload-btn">Upload</a>
+            <div class="auto-logout-toggle" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 12px; background-color: var(--secondary-bg); border: 1px solid var(--card-border);">
+                <input type="checkbox" id="disableAutoLogout" onchange="toggleAutoLogout()" style="cursor: pointer; width: 16px; height: 16px;">
+                <label for="disableAutoLogout" style="cursor: pointer; font-size: 0.85rem; color: var(--text-secondary); user-select: none; white-space: nowrap;">Stay Logged In</label>
+            </div>
+            <a href="upload_Ocr.html" class="upload-btn">Upload</a>
             <div class="search-box">
                 <i class="fas fa-search search-icon"></i>
                 <input type="text" id="searchInput" placeholder="Search..." oninput="searchAnnouncements()">
@@ -1139,6 +1143,7 @@
     // ====================================================
     const INACTIVITY_LIMIT = 5 * 60 * 1000;
     let inactivityTimer;
+    let autoLogoutEnabled = true;
 
     function logoutUser() {
         alert("You have been logged out due to inactivity.");
@@ -1148,17 +1153,58 @@
     }
 
     function resetInactivityTimer() {
+        // Only reset timer if auto-logout is enabled
+        if (!autoLogoutEnabled) {
+            clearTimeout(inactivityTimer);
+            return;
+        }
+        
         clearTimeout(inactivityTimer);
         localStorage.setItem('lastActivity', Date.now());
         inactivityTimer = setTimeout(logoutUser, INACTIVITY_LIMIT);
     }
 
-    window.onload = () => {
-        const lastActivity = localStorage.getItem('lastActivity');
-        if (lastActivity && Date.now() - lastActivity > INACTIVITY_LIMIT) {
-            logoutUser();
-        } else {
+    function toggleAutoLogout() {
+        const checkbox = document.getElementById('disableAutoLogout');
+        autoLogoutEnabled = !checkbox.checked;
+        
+        // Save preference to localStorage
+        localStorage.setItem('autoLogoutDisabled', checkbox.checked);
+        
+        if (autoLogoutEnabled) {
+            console.log('✅ Auto-logout enabled');
             resetInactivityTimer();
+        } else {
+            console.log('⏸️ Auto-logout disabled');
+            clearTimeout(inactivityTimer);
+        }
+    }
+
+    function loadAutoLogoutPreference() {
+        const disabled = localStorage.getItem('autoLogoutDisabled') === 'true';
+        const checkbox = document.getElementById('disableAutoLogout');
+        
+        if (checkbox) {
+            checkbox.checked = disabled;
+            autoLogoutEnabled = !disabled;
+        }
+        
+        if (!autoLogoutEnabled) {
+            console.log('⏸️ Auto-logout is disabled (from saved preference)');
+        }
+    }
+
+    window.onload = () => {
+        loadAutoLogoutPreference();
+        
+        // Only check inactivity if auto-logout is enabled
+        if (autoLogoutEnabled) {
+            const lastActivity = localStorage.getItem('lastActivity');
+            if (lastActivity && Date.now() - lastActivity > INACTIVITY_LIMIT) {
+                logoutUser();
+            } else {
+                resetInactivityTimer();
+            }
         }
     };
 

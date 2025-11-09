@@ -897,7 +897,7 @@
         }
     </style>
 </head>
-<body>
+<body class="light-mode">
 
     <header>
         <div class="logo-section" onclick="showCategory('all-announcement')">
@@ -911,7 +911,7 @@
         </nav>
         <div class="action-section">
             <button class="theme-toggle" onclick="toggleTheme()" id="theme-toggle-btn" title="Toggle theme (Light/Dark)">
-                <i class="fas fa-moon" id="theme-icon"></i>
+                <i class="fas fa-sun" id="theme-icon"></i>
             </button>
             <a href="upload_Announcement.html" class="upload-btn">Upload</a>
             <div class="search-box">
@@ -1096,15 +1096,17 @@
     }
 
     // Load saved theme on page load
-    function loadTheme() {
-        const savedTheme = localStorage.getItem('theme');
-        const body = document.body;
-        const themeIcon = document.getElementById('theme-icon');
-        
-        if (savedTheme === 'light') {
-            body.classList.add('light-mode');
-            themeIcon.classList.remove('fa-moon');
-            themeIcon.classList.add('fa-sun');
+   // Load saved theme on page load
+    function loadTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        const body = document.body;
+        const themeIcon = document.getElementById('theme-icon');
+        
+        // Default is now light. Only switch to dark if 'dark' is saved.
+        if (savedTheme === 'dark') {
+            body.classList.remove('light-mode');
+            themeIcon.classList.remove('fa-sun');
+            themeIcon.classList.add('fa-moon');
         }
     }
 

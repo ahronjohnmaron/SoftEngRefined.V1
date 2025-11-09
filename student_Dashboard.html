@@ -654,34 +654,54 @@
             transform: rotate(90deg);
         }
 
+        /* ============================================ */
+        /* MODAL BODY STYLES (UPDATED) */
+        /* ============================================ */
         .modal-body {
-            color: var(--text-primary);
+            padding-top: 10px;
+            line-height: 1.7;
+            color: var(--text-primary); 
         }
-
-        .modal-body .meta-info {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-
-        .modal-body .meta-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            padding: 8px 14px;
-            background-color: var(--hover-bg);
-            border-radius: 10px;
-            font-weight: 500;
-        }
-
-        .modal-body .description {
-            line-height: 1.8;
+        .modal-body .date {
             font-size: 1rem;
             color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--accent-green);
+            padding-left: 10px;
+            display: flex; 
+            align-items: center; 
         }
+        .modal-body .description {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            white-space: pre-wrap; 
+            margin-top: 20px;
+            line-height: 1.7;
+            padding-left: 10px; 
+            border-left: 3px solid var(--card-border); 
+        }
+        
+        /* UPDATED: This rule styles the "Full Content:" label */
+        .modal-body .description strong {
+            color: var(--text-secondary);
+            display: inline-flex;  /* Changed from block */
+            align-items: center;
+            margin-right: 8px; /* Added space */
+            margin-bottom: 8px; /* Kept for spacing when content wraps */
+        }
+        .modal-body .date i {
+            width: 28px; 
+            text-align: center;
+            color: var(--accent-green);
+        }
+        .modal-body .description i {
+            margin-right: 8px; 
+            color: var(--accent-green);
+        }
+        /* ============================================ */
+        /* END OF UPDATED MODAL BODY STYLES */
+        /* ============================================ */
 
         .loading {
             text-align: center;
@@ -718,7 +738,7 @@
     <header>
         <div class="logo-section" onclick="showCategory('all-announcement')">
             <img src="CCSICTLOGOCROP.png" alt="Logo" height="50px" width="50px">
-            <span class="logo-text">Department Communication <span>Hub</span></span>
+            <span class="logo-text">CentraNounceIT <span>Hub</span></span>
         </div>
         <nav>
             <a href="notify_Me.html">
@@ -762,7 +782,6 @@
             <div class="loading">📡 Loading announcements...</div>
         </div>
 
-        <!-- Pagination Controls -->
         <div class="pagination-container" id="pagination-container" style="display: none;">
             <button class="pagination-btn" id="prev-btn" onclick="previousPage()">
                 <i class="fas fa-chevron-left"></i>
@@ -774,34 +793,14 @@
         </div>
     </main>
 
-    <!-- View Details Modal -->
     <div id="viewModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2 id="modalTitle">Announcement Details</h2>
                 <span class="close-modal" onclick="closeViewModal()">&times;</span>
             </div>
-            <div class="modal-body">
-                <div class="meta-info">
-                    <div class="meta-item">
-                        <i class="fas fa-calendar"></i>
-                        <span id="modalDate"></span>
-                    </div>
-                    <div class="meta-item">
-                        <i class="fas fa-tag"></i>
-                        <span id="modalCategory"></span>
-                    </div>
-                    <div class="meta-item" id="modalAudienceContainer" style="display: none;">
-                        <i class="fas fa-users"></i>
-                        <span id="modalAudience"></span>
-                    </div>
-                    <div class="meta-item" id="modalPostedByContainer" style="display: none;">
-                        <img id="modalPostedByAvatar" src="" alt="" style="width: 36px; height: 36px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-green);">
-                        <span>Posted by <strong id="modalPostedBy"></strong></span>
-                    </div>
-                </div>
-                <hr style="border: 1px solid var(--card-border); margin: 24px 0;">
-                <p class="description" id="modalDescription"></p>
+            <div class="modal-body" id="viewModalBody">
+                <p class="description">Loading details...</p>
             </div>
         </div>
     </div>
@@ -991,7 +990,7 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
             const paginatedAnnouncements = announcements.slice(startIndex, endIndex);
             
             grid.innerHTML = paginatedAnnouncements.map(announcement => {
-                const badgeClass = `badge-${announcement.category.toLowerCase().replace(' ', '-')}`;
+                const badgeClass = `badge-${(announcement.category || 'news').toLowerCase().replace(' ', '-')}`;
                 const postedByUser = announcement.members;
                 const userName = postedByUser?.full_name || announcement.posted_by || 'Unknown User';
                 const userAvatar = postedByUser?.avatar_url || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
@@ -1001,11 +1000,18 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
                     <span class="card-category-badge ${badgeClass}">${escapeHtml(announcement.category)}</span>
                     <div class="card-content">
                         <p class="date">
-                            <i class="fas fa-calendar"></i>
+                            <i class="fas fa-calendar"></i> Posted at: 
+                            ${formatDate(announcement.created_at)}
+                            
+                        </p>
+                        <p class="date">
+                            <i class="fas fa-calendar"></i> Date Scheduled: 
                             ${formatDate(announcement.scheduled_date)}
                         </p>
                         <h3 class="title">${highlightText(escapeHtml(announcement.title), searchTerm)}</h3>
-                        <p class="description">${highlightText(truncateText(escapeHtml(announcement.description) || 'No description provided', 120), searchTerm)}</p>
+                        
+                        <p class="description">${highlightText(escapeHtml(announcement.summary || truncateText(announcement.description, 120)) || 'No description provided', searchTerm)}</p>
+                        
                         <div class="posted-by">
                             <img src="${escapeHtml(userAvatar)}" 
                                  alt="${escapeHtml(userName)}"
@@ -1028,32 +1034,45 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
             `}).join('');
         }
 
+        // ============================================
+        // MODAL FUNCTIONS (UPDATED PER REQUEST)
+        // ============================================
         function openViewModal(id) {
             const announcement = allAnnouncements.find(a => a.id === id);
             if (!announcement) return;
             
-            const postedByUser = announcement.members;
-            const userName = postedByUser?.full_name || announcement.posted_by || 'Unknown User';
-            const userAvatar = postedByUser?.avatar_url || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
             
-            document.getElementById('modalTitle').textContent = announcement.title;
-            document.getElementById('modalDate').textContent = formatDate(announcement.scheduled_date);
-            document.getElementById('modalCategory').textContent = announcement.category;
-            document.getElementById('modalDescription').textContent = announcement.description || 'No description provided';
-            
-            const audienceContainer = document.getElementById('modalAudienceContainer');
-            if (announcement.target_audience) {
-                document.getElementById('modalAudience').textContent = announcement.target_audience;
-                audienceContainer.style.display = 'flex';
-            } else {
-                audienceContainer.style.display = 'none';
-            }
+            // Set modal title
+            document.getElementById('modalTitle').innerHTML = highlightText(escapeHtml(announcement.title), searchTerm);
 
-            const postedByContainer = document.getElementById('modalPostedByContainer');
-            document.getElementById('modalPostedBy').textContent = userName;
-            document.getElementById('modalPostedByAvatar').src = userAvatar;
-            document.getElementById('modalPostedByAvatar').alt = userName;
-            postedByContainer.style.display = 'flex';
+            // Get modal body element
+            const modalBody = document.getElementById('viewModalBody');
+            
+            // Use .replace(/\n/g, '<br>') to preserve line breaks in the description
+            // Added icons as requested
+            modalBody.innerHTML = `
+                <p class="date">
+                    <i class="fas fa-file-export"></i>
+                    <strong>Date posted:</strong> ${formatDate(announcement.created_at)}
+                </p>
+                <p class="date">
+                    <i class="fas fa-calendar-check"></i>
+                    <strong>Date scheduled:</strong> ${formatDate(announcement.scheduled_date)}
+                </p>
+                <p class="date">
+                    <i class="fas fa-question-circle"></i>
+                    <strong>Why:</strong> ${highlightText(escapeHtml(announcement.why) || 'N/A', searchTerm)}
+                </p>
+                <p class="date">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <strong>Location:</strong> ${highlightText(escapeHtml(announcement.location) || 'N/A', searchTerm)}
+                </p>
+                <p class="description">
+                    <strong><i class="fas fa-align-left"></i> Full Content:</strong>
+                    ${highlightText(escapeHtml(announcement.description).replace(/\n/g, '<br>') || 'No description provided', searchTerm)}
+                </p>
+            `;
             
             document.getElementById('viewModal').classList.add('active');
         }
@@ -1061,6 +1080,9 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         function closeViewModal() {
             document.getElementById('viewModal').classList.remove('active');
         }
+        // ============================================
+        // END MODAL FUNCTIONS
+        // ============================================
 
 function searchAnnouncements(preservePage = false) {
     const searchInput = document.getElementById('searchInput');
@@ -1090,11 +1112,15 @@ function searchAnnouncements(preservePage = false) {
         const userName = announcement.members?.full_name || announcement.posted_by || '';
         const formattedDate = formatDate(announcement.scheduled_date).toLowerCase();
 
+        // Check all relevant fields for the search term
         return (
             (announcement.title && announcement.title.toLowerCase().includes(searchTerm)) ||
             (announcement.description && announcement.description.toLowerCase().includes(searchTerm)) ||
+            (announcement.summary && announcement.summary.toLowerCase().includes(searchTerm)) || // Added summary
             (announcement.category && announcement.category.toLowerCase().includes(searchTerm)) ||
             (announcement.target_audience && announcement.target_audience.toLowerCase().includes(searchTerm)) ||
+            (announcement.why && announcement.why.toLowerCase().includes(searchTerm)) || // Added why
+            (announcement.location && announcement.location.toLowerCase().includes(searchTerm)) || // Added location
             (userName && userName.toLowerCase().includes(searchTerm)) ||
             (formattedDate && formattedDate.includes(searchTerm))
         );
@@ -1180,12 +1206,13 @@ function searchAnnouncements(preservePage = false) {
         }
 
         function truncateText(text, maxLength) {
+            if (!text) return '';
             if (text.length <= maxLength) return text;
             return text.substring(0, maxLength) + '...';
         }
 
         function escapeHtml(text) {
-            if (!text) return '';
+            if (text === null || text === undefined) return '';
             const map = {
                 '&': '&amp;',
                 '<': '&lt;',

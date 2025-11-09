@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { 
           font-family: 'Poppins', sans-serif;
@@ -20,7 +21,6 @@
         .input-shadow {
           box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
         }
-        /* Fix cropper.js modal transparency - make it very light */
         .cropper-modal {
           background-color: rgba(0, 0, 0, 0.2) !important;
         }
@@ -51,50 +51,41 @@
           max-height: 90vh;
           overflow: auto;
         }
-        .camera-modal {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(26, 26, 26, 0.95);
-          display: none;
-          align-items: center;
-          justify-content: center;
-          z-index: 9999;
+        .error-badge {
+          background-color: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #ef4444;
         }
-        .camera-modal-content {
-          background: #2d2d2d;
-          border-radius: 8px;
-          padding: 30px;
-          max-width: 90vw;
-          max-height: 90vh;
-          overflow: auto;
+        .success-badge {
+          background-color: rgba(126, 211, 33, 0.1);
+          border: 1px solid rgba(126, 211, 33, 0.3);
+          color: #7ed321;
         }
-        #cameraVideo {
-          width: 100%;
-          max-width: 640px;
-          border-radius: 8px;
-          border: 2px solid #7ed321;
+        .warning-badge {
+          background-color: rgba(251, 191, 36, 0.1);
+          border: 1px solid rgba(251, 191, 36, 0.3);
+          color: #fbbf24;
         }
     </style>
 </head>
 <body class="text-white min-h-screen p-6">
   <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl font-bold text-center mb-8" style="color: #7ed321;">Upload Announcement</h1>
+    <div class="flex justify-between items-center mb-8">
+        <a href="faculty_Dashboard.html" class="inline-flex items-center gap-2 text-lg font-semibold transition-all opacity-90 hover:opacity-100" style="color: #7ed321;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-arrow-left" viewBox="0 0 16 16">
+                <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+            </svg>
+            Back to Dashboard
+        </a>
+        <h1 class="text-3xl font-bold text-center" style="color: #7ed321;">Upload Announcement</h1>
+        <div style="width: 180px;"></div>
+    </div>
     
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <!-- Left Column: Image Upload & Text Preview -->
       <div class="space-y-6">
         <div class="rounded-lg p-6 card-shadow" style="background-color: #2d2d2d;">
           <label for="imageInput" class="block font-semibold mb-3 text-lg" style="color: #7ed321;">Upload Image</label>
           <input type="file" id="imageInput" accept="image/*" class="mb-4 w-full text-sm rounded border px-3 py-2 text-white input-shadow" style="background-color: #1a1a1a; border-color: #3d3d3d;">
-          
-          <div class="flex gap-3 mb-4">
-            <button id="cameraBtn" class="flex-1 px-4 py-3 rounded font-semibold transition-all hover:opacity-90" style="background-color: #3d3d3d; color: #ffffff;">
-              📷 Use Camera
-            </button>
-          </div>
           
           <div class="flex gap-3">
             <button id="extractText" class="flex-1 px-4 py-3 rounded font-bold disabled:opacity-50 transition-all hover:opacity-90" style="background-color: #7ed321; color: #1a1a1a; box-shadow: 0 4px 12px rgba(126, 211, 33, 0.3);" disabled>Extract Text</button>
@@ -114,67 +105,82 @@
         </div>
       </div>
       
-      <!-- Right Column: Form Fields -->
       <div>
-        <form class="rounded-lg p-8 space-y-6 card-shadow" style="background-color: #2d2d2d; min-height: 800px;">
-          <div class="text-2xl font-bold mb-6" style="color: #7ed321;">Event Details (4 W's)</div>
+        <form id="announcementForm" class="rounded-lg p-8 space-y-6 card-shadow" style="background-color: #2d2d2d; min-height: 800px;">
+          <div class="text-2xl font-bold mb-6" style="color: #7ed321;">Announcement Details</div>
           
           <div class="grid grid-cols-1 gap-4">
             <div>
-              <label class="block mb-2 font-semibold text-base" for="fieldTitle" style="color: #7ed321;">Title</label>
-              <input id="fieldTitle" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d;" autocomplete="off" placeholder="Announcement or event title" />
+                <label class="block mb-2 font-semibold text-base" for="fieldTitle" style="color: #7ed321;">Title *</label>
+                <input id="fieldTitle" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d;" autocomplete="off" placeholder="Main title of the announcement" required />
             </div>
-            
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label for="category" class="block mb-2 font-semibold text-base" style="color: #7ed321;">Category *</label>
+                    <select id="category" required class="w-full rounded px-4 py-3 text-white text-base input-shadow cursor-pointer" style="background-color: #1a1a1a; border: 1px solid #3d3d3d; appearance: none;">
+                        <option value="">Select Category</option>
+                        <option value="Emergency">Emergency</option>
+                        <option value="Memo">Memo</option>
+                        <option value="Notices">Notices</option>
+                        <option value="Deadline">Deadline</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="targetAudience" class="block mb-2 font-semibold text-base" style="color: #7ed321;">Target Audience *</label>
+                    <select id="targetAudience" required class="w-full rounded px-4 py-3 text-white text-base input-shadow cursor-pointer" style="background-color: #1a1a1a; border: 1px solid #3d3d3d; appearance: none;">
+                        <option value="">Select Target Audience</option>
+                        <option value="all">All</option>
+                        <option value="faculty">Faculty Only</option>
+                        <option value="students">Students Only</option>
+                    </select>
+                </div>
+            </div>
+
             <div>
-              <label class="block mb-2 font-semibold text-base" for="fieldWhat" style="color: #7ed321;">What (event/content)</label>
-              <textarea id="fieldWhat" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d; height: 180px; resize: vertical;" placeholder="Description of the event or announcement"></textarea>
+              <label class="block mb-2 font-semibold text-base" for="fieldWhat" style="color: #7ed321;">What (Full Description)</label>
+              <textarea id="fieldWhat" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d; height: 180px; resize: vertical;" placeholder="Complete announcement content"></textarea>
+            </div>
+
+            <!-- NEW SUMMARY FIELD -->
+            <div>
+              <label class="block mb-2 font-semibold text-base" for="fieldSummary" style="color: #7ed321;">Summary (Brief Overview)</label>
+              <textarea id="fieldSummary" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d; height: 120px; resize: vertical;" placeholder="Auto-generated concise summary"></textarea>
             </div>
             
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label class="block mb-2 font-semibold text-base" for="fieldWhen" style="color: #7ed321;">When (date/time)</label>
-                <input id="fieldWhen" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d;" autocomplete="off" placeholder="Event date and time" />
+                <label class="block mb-2 font-semibold text-base" for="fieldWhen" style="color: #7ed321;">When (Scheduled Date)</label>
+                <input id="fieldWhen" type="date" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d;" autocomplete="off" placeholder="Event date and time" />
               </div>
               
               <div>
-                <label class="block mb-2 font-semibold text-base" for="fieldWhere" style="color: #7ed321;">Where (location)</label>
+                <label class="block mb-2 font-semibold text-base" for="fieldWhere" style="color: #7ed321;">Where (Location)</label>
                 <input id="fieldWhere" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d;" autocomplete="off" placeholder="Event location or venue" />
               </div>
             </div>
             
             <div>
-              <label class="block mb-2 font-semibold text-base" for="fieldWhy" style="color: #7ed321;">Why (purpose/reason)</label>
+              <label class="block mb-2 font-semibold text-base" for="fieldWhy" style="color: #7ed321;">Why (Purpose)</label>
               <textarea id="fieldWhy" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d; height: 150px; resize: vertical;" placeholder="Purpose or reason for the event"></textarea>
             </div>
             
             <div>
               <label class="block mb-2 font-semibold text-base" for="fieldDatePosted" style="color: #7ed321;">Date Posted</label>
-              <input id="fieldDatePosted" class="w-full rounded px-4 py-3 text-white text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d;" autocomplete="off" placeholder="When this was posted" />
+              <input id="fieldDatePosted" class="w-full rounded px-4 py-3 text-base input-shadow" style="background-color: #1a1a1a; border: 1px solid #3d3d3d; color: #7a7a7a;" readonly />
             </div>
           </div>
           
-          <div id="statusMsg" class="text-base mt-6 font-semibold text-center p-4 rounded hidden" style="color: #7ed321; background-color: rgba(126, 211, 33, 0.1);"></div>
+          <div id="statusMsg" class="text-base mt-6 font-semibold text-center p-4 rounded hidden"></div>
+
+          <button type="submit" id="saveButton" class="w-full px-4 py-3 rounded font-bold transition-all hover:opacity-90 mt-6" style="background-color: #7ed321; color: #1a1a1a; box-shadow: 0 4px 12px rgba(126, 211, 33, 0.3);">
+            Save Announcement
+          </button>
         </form>
       </div>
     </div>
   </div>
 
-  <!-- Camera Modal -->
-  <div id="cameraModal" class="camera-modal">
-    <div class="camera-modal-content card-shadow">
-      <h2 class="text-2xl font-bold mb-4" style="color: #7ed321;">Take a Photo</h2>
-      <div class="mb-4 text-center">
-        <video id="cameraVideo" autoplay playsinline></video>
-        <canvas id="cameraCanvas" style="display: none;"></canvas>
-      </div>
-      <div class="flex gap-3 justify-end">
-        <button id="cancelCameraBtn" class="px-6 py-3 rounded font-semibold transition-all hover:opacity-90" style="background-color: #3d3d3d; color: #ffffff;">Cancel</button>
-        <button id="captureBtn" class="px-6 py-3 rounded font-semibold transition-all hover:opacity-90" style="background-color: #7ed321; color: #1a1a1a; box-shadow: 0 4px 12px rgba(126, 211, 33, 0.3);">📸 Capture Photo</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Crop Modal -->
   <div id="cropModal" class="crop-modal">
     <div class="crop-modal-content card-shadow">
       <h2 class="text-2xl font-bold mb-4" style="color: #7ed321;">Crop Your Image</h2>
@@ -189,52 +195,259 @@
   </div>
 
   <script>
+    // =============================================================================
+    // CONFIGURATION & CONSTANTS
+    // =============================================================================
+    const CONFIG = {
+      SUPABASE_URL: 'https://dqtictujkhxultwoaqaw.supabase.co',
+      SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdGljdHVqa2h4dWx0d29hcWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTU1MjksImV4cCI6MjA3Mzg3MTUyOX0.DsnJZ9ylCBlTeVp_KdgRq71cV0f7MojOfuWg1MVGS5I',
+      GROQ_API_KEY: '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',
+      GROQ_MODEL: 'llama-3.1-8b-instant',
+      MAX_RETRIES: 3,
+      RETRY_DELAY: 2000,
+      REQUEST_TIMEOUT: 30000,
+      MIN_OCR_TEXT_LENGTH: 10
+    };
+
+    const supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY);
+
+    // =============================================================================
+    // GLOBAL STATE
+    // =============================================================================
     let cropper = null;
     let currentImageBlob = null;
-    let cameraStream = null;
+    let currentUserProfile = null;
+
+    // =============================================================================
+    // DOM ELEMENTS
+    // =============================================================================
     const imageInput = document.getElementById('imageInput');
     const cropImage = document.getElementById('cropImage');
     const cropBtn = document.getElementById('cropBtn');
-    const cameraBtn = document.getElementById('cameraBtn');
-    const cameraVideo = document.getElementById('cameraVideo');
-    const cameraCanvas = document.getElementById('cameraCanvas');
-    const captureBtn = document.getElementById('captureBtn');
     const extractTextBtn = document.getElementById('extractText');
     const extractedTextPreview = document.getElementById('extractedTextPreview');
     const progressContainer = document.getElementById('progressContainer');
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
+    const statusMsg = document.getElementById('statusMsg');
+    
+    const announcementForm = document.getElementById('announcementForm');
     const fieldTitle = document.getElementById('fieldTitle');
+    const fieldCategory = document.getElementById('category');
+    const fieldTargetAudience = document.getElementById('targetAudience');
     const fieldWhat = document.getElementById('fieldWhat');
+    const fieldSummary = document.getElementById('fieldSummary'); // NEW
     const fieldWhen = document.getElementById('fieldWhen');
     const fieldWhere = document.getElementById('fieldWhere');
     const fieldWhy = document.getElementById('fieldWhy');
     const fieldDatePosted = document.getElementById('fieldDatePosted');
-    const statusMsg = document.getElementById('statusMsg');
+    const saveButton = document.getElementById('saveButton');
 
+    // =============================================================================
+    // CUSTOM ERROR CLASSES
+    // =============================================================================
+    class OCRError extends Error {
+      constructor(message, originalError = null) {
+        super(message);
+        this.name = 'OCRError';
+        this.originalError = originalError;
+        this.timestamp = new Date().toISOString();
+      }
+    }
+
+    class GroqAPIError extends Error {
+      constructor(message, statusCode = null, originalError = null) {
+        super(message);
+        this.name = 'GroqAPIError';
+        this.statusCode = statusCode;
+        this.originalError = originalError;
+        this.timestamp = new Date().toISOString();
+      }
+    }
+
+    class ValidationError extends Error {
+      constructor(message, field = null) {
+        super(message);
+        this.name = 'ValidationError';
+        this.field = field;
+        this.timestamp = new Date().toISOString();
+      }
+    }
+
+    // =============================================================================
+    // UTILITY FUNCTIONS
+    // =============================================================================
+    
+    function showStatus(message, type = 'info') {
+      statusMsg.textContent = message;
+      statusMsg.className = 'text-base mt-6 font-semibold text-center p-4 rounded';
+      
+      if (type === 'error') {
+        statusMsg.classList.add('error-badge');
+      } else if (type === 'success') {
+        statusMsg.classList.add('success-badge');
+      } else if (type === 'warning') {
+        statusMsg.classList.add('warning-badge');
+      } else {
+        statusMsg.classList.add('success-badge');
+      }
+      
+      statusMsg.classList.remove('hidden');
+      console.log(`[${type.toUpperCase()}] ${message}`);
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function getBackoffDelay(attempt) {
+      return Math.min(CONFIG.RETRY_DELAY * Math.pow(2, attempt), 10000);
+    }
+
+    function getTodayDate() {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = (today.getMonth() + 1).toString().padStart(2, '0');
+      const day = today.getDate().toString().padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function validateExtractedFields(fields) {
+      const errors = [];
+      
+      const validAudiences = ['all', 'faculty', 'students'];
+      if (fields.target_audience && !validAudiences.includes(fields.target_audience)) {
+        errors.push(`Invalid target_audience: "${fields.target_audience}". Defaulting to "all".`);
+        fields.target_audience = 'all';
+      }
+      
+      const validCategories = ['Emergency', 'Memo', 'Notices', 'Deadline'];
+      if (fields.category && !validCategories.includes(fields.category)) {
+        errors.push(`Invalid category: "${fields.category}". Defaulting to "Notices".`);
+        fields.category = 'Notices';
+      }
+      
+      if (fields.when && fields.when !== '') {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(fields.when)) {
+          errors.push(`Invalid date format: "${fields.when}". Clearing date field.`);
+          fields.when = '';
+        }
+      }
+      
+      if (fields.title && fields.title.length > 100) {
+        errors.push(`Title too long (${fields.title.length} chars). Truncating to 100 characters.`);
+        fields.title = fields.title.substring(0, 100);
+      }
+      
+      return { isValid: errors.length === 0, errors, fields };
+    }
+
+    function sanitizeForJSON(str) {
+      if (!str) return '';
+      return str
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, ' ')
+        .replace(/\r/g, ' ')
+        .replace(/\t/g, ' ')
+        .trim();
+    }
+
+    // =============================================================================
+    // PAGE INITIALIZATION
+    // =============================================================================
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        if (!protectPage()) {
+          throw new Error("Authentication required");
+        }
+        await loadUserProfile();
+        setTodayDate();
+        console.log('✅ Page initialized successfully');
+      } catch (error) {
+        console.error('❌ Initialization error:', error);
+        showStatus('Failed to initialize page. Please refresh.', 'error');
+      }
+    });
+
+    function protectPage() {
+      const loggedInUser = localStorage.getItem('loggedInUser');
+      if (!loggedInUser) {
+        console.log('🔒 No session - redirecting to login');
+        window.location.href = 'faculty_login.html';
+        return false;
+      }
+      return true;
+    }
+
+    async function loadUserProfile() {
+      const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+      if (!loggedInUser?.email) {
+        throw new Error('No user email found in session');
+      }
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('id, full_name, avatar_url, email, user_type')
+          .eq('email', loggedInUser.email)
+          .single();
+        
+        if (error) throw error;
+        
+        currentUserProfile = data;
+        console.log('✅ User profile loaded:', currentUserProfile.id);
+      } catch (error) {
+        console.error('❌ Error fetching user profile:', error);
+        throw new Error('Failed to load user profile');
+      }
+    }
+
+    function setTodayDate() {
+      fieldDatePosted.value = getTodayDate();
+    }
+
+    // =============================================================================
+    // IMAGE CROPPING LOGIC
+    // =============================================================================
+    
     imageInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          cropImage.src = e.target.result;
-          document.getElementById('cropModal').style.display = 'flex';
-          if (cropper) cropper.destroy();
-          cropper = new Cropper(cropImage, {
-            viewMode: 1,
-            autoCropArea: 1,
-            movable: true,
-            zoomable: true,
-            rotatable: true,
-            scalable: true,
-            background: false,
-            minCropBoxWidth: 100,
-            minCropBoxHeight: 100,
-          });
-          extractTextBtn.disabled = true;
-        };
-        reader.readAsDataURL(file);
+      if (!file) return;
+      
+      if (!file.type.startsWith('image/')) {
+        showStatus('Please select a valid image file', 'error');
+        return;
       }
+      
+      if (file.size > 10 * 1024 * 1024) {
+        showStatus('Image file too large. Maximum size is 10MB.', 'error');
+        return;
+      }
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        cropImage.src = e.target.result;
+        document.getElementById('cropModal').style.display = 'flex';
+        if (cropper) cropper.destroy();
+        cropper = new Cropper(cropImage, {
+          viewMode: 1,
+          autoCropArea: 1,
+          movable: true,
+          zoomable: true,
+          rotatable: true,
+          scalable: true,
+          background: false,
+          minCropBoxWidth: 100,
+          minCropBoxHeight: 100,
+        });
+        extractTextBtn.disabled = true;
+      };
+      reader.onerror = () => {
+        showStatus('Failed to read image file', 'error');
+      };
+      reader.readAsDataURL(file);
     });
 
     document.getElementById('cancelCropBtn').addEventListener('click', () => {
@@ -248,85 +461,64 @@
         cropper.getCroppedCanvas().toBlob(blob => {
           currentImageBlob = blob;
           document.getElementById('cropModal').style.display = 'none';
-          statusMsg.innerHTML = "✓ Image cropped. Now you can run OCR.";
-          statusMsg.classList.remove('hidden');
+          showStatus('✓ Image cropped. Ready for OCR extraction.', 'success');
           extractTextBtn.disabled = false;
           if (cropper) cropper.destroy();
         });
       }
     });
 
-    // Camera functionality
-    cameraBtn.addEventListener('click', async () => {
-      try {
-        cameraStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment' } 
-        });
-        cameraVideo.srcObject = cameraStream;
-        document.getElementById('cameraModal').style.display = 'flex';
-      } catch (err) {
-        statusMsg.innerHTML = "❌ Camera access denied or not available";
-        statusMsg.classList.remove('hidden');
-      }
-    });
-
-    document.getElementById('cancelCameraBtn').addEventListener('click', () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        cameraStream = null;
-      }
-      document.getElementById('cameraModal').style.display = 'none';
-    });
-
-    captureBtn.addEventListener('click', () => {
-      const context = cameraCanvas.getContext('2d');
-      cameraCanvas.width = cameraVideo.videoWidth;
-      cameraCanvas.height = cameraVideo.videoHeight;
-      context.drawImage(cameraVideo, 0, 0);
-      
-      cameraCanvas.toBlob(blob => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          cropImage.src = e.target.result;
-          document.getElementById('cameraModal').style.display = 'none';
-          document.getElementById('cropModal').style.display = 'flex';
-          
-          if (cameraStream) {
-            cameraStream.getTracks().forEach(track => track.stop());
-            cameraStream = null;
-          }
-          
-          if (cropper) cropper.destroy();
-          cropper = new Cropper(cropImage, {
-            viewMode: 1,
-            autoCropArea: 1,
-            movable: true,
-            zoomable: true,
-            rotatable: true,
-            scalable: true,
-            background: false,
-            minCropBoxWidth: 100,
-            minCropBoxHeight: 100,
-          });
-          extractTextBtn.disabled = true;
-        };
-        reader.readAsDataURL(blob);
-      });
-    });
-
+    // =============================================================================
+    // OCR TEXT EXTRACTION WITH ERROR HANDLING
+    // =============================================================================
+    
     extractTextBtn.addEventListener('click', async () => {
       if (!currentImageBlob) {
-        statusMsg.innerHTML = "⚠ Please crop and confirm the image to use for OCR.";
-        statusMsg.classList.remove('hidden');
+        showStatus('⚠ Please crop and confirm the image first.', 'warning');
         return;
       }
+
       statusMsg.classList.add('hidden');
-      progressBar.style.width = "0%";
+      progressBar.style.width = '0%';
       progressContainer.classList.remove('hidden');
       extractTextBtn.disabled = true;
       extractTextBtn.textContent = 'Recognizing...';
+
       try {
-        const result = await Tesseract.recognize(currentImageBlob, 'eng', {
+        const ocrText = await performOCR(currentImageBlob);
+        
+        if (!ocrText || ocrText.length < CONFIG.MIN_OCR_TEXT_LENGTH) {
+          throw new OCRError('Insufficient text extracted from image. Please try a clearer image.');
+        }
+
+        extractedTextPreview.textContent = ocrText;
+        showStatus('⏳ Extracting structured data with AI...', 'info');
+
+        const fields = await extractFieldsWithRetry(ocrText);
+        
+        const validation = validateExtractedFields(fields);
+        
+        if (!validation.isValid) {
+          console.warn('⚠ Validation warnings:', validation.errors);
+          showStatus(`⚠ Fields extracted with ${validation.errors.length} warning(s). Please review.`, 'warning');
+        } else {
+          showStatus('✅ All fields extracted successfully!', 'success');
+        }
+        
+        populateFormFields(validation.fields);
+
+      } catch (error) {
+        handleExtractionError(error);
+      } finally {
+        extractTextBtn.disabled = false;
+        extractTextBtn.textContent = 'Extract Text from Image';
+        progressContainer.classList.add('hidden');
+      }
+    });
+
+    async function performOCR(imageBlob) {
+      try {
+        const result = await Tesseract.recognize(imageBlob, 'eng', {
           logger: m => {
             if (m.status === 'recognizing text') {
               const progress = Math.round(m.progress * 100);
@@ -335,96 +527,360 @@
             }
           }
         });
-        const extractedText = result.data.text.trim();
-        extractedTextPreview.textContent = extractedText || "No text found";
-        statusMsg.innerHTML = "⏳ Loading text for structured details...";
-        statusMsg.classList.remove('hidden');
-
-        // Call Groq for structured fields:
-        const fields = await extractSmartFieldsWithGroq(extractedText);
         
-        if (fields && (fields.title || fields.what || fields.when || fields.where || fields.why)) {
-          statusMsg.innerHTML = "✓ Fields autofilled!";
-          statusMsg.classList.remove('hidden');
-        } else {
-          statusMsg.innerHTML = "⚠ unable to extract fields.";
-          statusMsg.classList.remove('hidden');
-        }
+        const text = result.data.text.trim();
+        console.log('✅ OCR completed. Text length:', text.length);
+        return text;
         
-        fieldTitle.value = fields.title || "";
-        fieldWhat.value = fields.what || "";
-        fieldWhen.value = fields.when || "";
-        fieldWhere.value = fields.where || "";
-        fieldWhy.value = fields.why || "";
-        fieldDatePosted.value = fields.date_posted || "";
-
-      } catch (err) {
-        statusMsg.innerHTML = "❌ ERROR: " + err;
-        statusMsg.classList.remove('hidden');
-      } finally {
-        extractTextBtn.disabled = false;
-        extractTextBtn.textContent = 'Extract Text from Image';
-        progressContainer.classList.add('hidden');
-      }
-    });
-
-    // --- GROQ STRUCTURED OUTPUT FUNCTION ---
-    async function extractSmartFieldsWithGroq(ocrText) {
-      const api_key = "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";
-      const prompt = `
-Given this text from an announcement or event poster:
-"""${ocrText}"""
-
-Extract and return ONLY a JSON object with these keys:
-- title: A concise, catchy title for the announcement or event (5-10 words max). This should capture the essence of the event.
-- what: A complete, clear, self-contained summary of the main event or announcement (2-3 sentences minimum). Include the core information, what is being announced, and any key details or requests.
-- when: The date and time of the event (if specified). Include both date and time if available.
-- where: The full location, venue, or institution where the event takes place.
-- why: The purpose, reason, or objective of the event or announcement. Why is this happening? What is the goal or benefit?
-- date_posted: The actual posting date or publication date (if found in the text).
-
-Important:
-- Return ONLY valid JSON, no markdown, no explanation, no extra text.
-- If a field is not found, use an empty string "".
-- Be comprehensive in the "what" and "why" fields.
-- Make the title engaging and informative.
-
-Example format:
-{
-  "title": "...",
-  "what": "...",
-  "when": "...",
-  "where": "...",
-  "why": "...",
-  "date_posted": "..."
-}
-`;
-
-      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${api_key}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [
-            { role: "system", content: "You extract only JSON." },
-            { role: "user", content: prompt }
-          ],
-          max_tokens: 256,
-          temperature: 0.1,
-        }),
-      });
-      const data = await response.json();
-      try {
-        const match = data.choices[0].message.content.match(/\{[\s\S]*\}/);
-        if (match) return JSON.parse(match[0]);
-        return {};
-      } catch {
-        return {};
+      } catch (error) {
+        throw new OCRError('OCR recognition failed', error);
       }
     }
+
+    // =============================================================================
+    // GROQ API INTEGRATION WITH RETRY LOGIC
+    // =============================================================================
+
+    async function extractFieldsWithRetry(ocrText) {
+      let lastError = null;
+      
+      for (let attempt = 0; attempt < CONFIG.MAX_RETRIES; attempt++) {
+        try {
+          console.log(`🔄 Groq API attempt ${attempt + 1}/${CONFIG.MAX_RETRIES}`);
+          
+          const fields = await extractSmartFieldsWithGroq(ocrText);
+          
+          if (!fields || typeof fields !== 'object') {
+            throw new GroqAPIError('Invalid response format from API');
+          }
+          
+          console.log('✅ Groq extraction successful:', fields);
+          return fields;
+          
+        } catch (error) {
+          lastError = error;
+          console.warn(`⚠ Attempt ${attempt + 1} failed:`, error.message);
+          
+          if (error instanceof ValidationError) {
+            throw error;
+          }
+          
+          if (attempt < CONFIG.MAX_RETRIES - 1) {
+            const delay = getBackoffDelay(attempt);
+            console.log(`⏳ Retrying in ${delay}ms...`);
+            showStatus(`Attempt ${attempt + 1} failed. Retrying...`, 'warning');
+            await sleep(delay);
+          }
+        }
+      }
+      
+      throw new GroqAPIError(
+        `Failed after ${CONFIG.MAX_RETRIES} attempts: ${lastError.message}`,
+        null,
+        lastError
+      );
+    }
+
+    /**
+     * MODIFIED: Now extracts 8 fields including "summary"
+     */
+    async function extractSmartFieldsWithGroq(ocrText) {
+      const prompt = `# TASK: Extract structured data from OCR announcement text
+
+**INPUT TEXT:**
+"""
+${sanitizeForJSON(ocrText)}
+"""
+
+**ANCHOR DATE:** November 9, 2025
+
+## EXTRACTION RULES
+
+### 1. TITLE (5-10 words)
+Extract headline or synthesize from main topic. Never empty.
+
+### 2. WHAT (100% VERBATIM - MOST CRITICAL)
+**COPY THE ENTIRE ANNOUNCEMENT TEXT EXACTLY AS IT APPEARS**
+- Include EVERY SINGLE SENTENCE from the original text
+- Include EVERY PARAGRAPH without exception
+- Only fix obvious OCR character errors: l→I, 0→O, rn→m, "Novemher"→"November", "20Z5"→"2025"
+- DO NOT rephrase, summarize, condense, or skip ANY content
+- DO NOT remove any details, instructions, requirements, dates, times, contact information
+- Replace newlines with single spaces but preserve ALL text
+- This field MUST contain 95-100% of the original OCR text length
+
+**ABSOLUTE RULE: If announcement has 15 sentences, extract all 15. If it has 200 words, extract 190-200 words. PASTE EVERYTHING.**
+
+### 3. SUMMARY (NEW - 2-3 sentences)
+**Create a CONCISE SUMMARY of the announcement**
+- Abstractive summarization: condense the main message
+- Include: key action/event, date if important, audience if specific
+- 2-3 sentences maximum (40-60 words)
+- Make it informative but brief - suitable for notifications/previews
+- Example: "Students must submit final project proposals by November 15th. Late submissions will not be accepted. Contact IT helpdesk for technical assistance."
+
+### 4. WHEN (YYYY-MM-DD or "")
+Smart date extraction:
+- Parse: "Nov 9", "11/09/2025", "November 9th", "9-11-2025"
+- If only month/day → use 2025 as year
+- Relative: "tomorrow"→2025-11-10, "next Monday"→calculate from Nov 9
+- Return "" if no date found
+
+### 5. WHERE
+Complete location: rooms, buildings, addresses, online platforms, venues.
+Return "" only if no location at all.
+
+### 6. WHY
+Purpose in 1-2 sentences. Extract or intelligently infer from context. Never empty.
+
+### 7. TARGET_AUDIENCE (enum)
+IF "all/everyone" OR (students AND faculty) OR no_specific_audience → "all"
+ELSE IF only_students → "students"
+ELSE IF only_faculty → "faculty"
+DEFAULT → "all"
+
+### 8. CATEGORY (enum - priority)
+Emergency (urgent/cancelled) > Deadline (due/submit) > Memo (directive/policy) > Notices (default)
+
+## OUTPUT JSON (no markdown, no explanations):
+{
+  "title": "string",
+  "what": "COMPLETE VERBATIM announcement text with only OCR fixes",
+  "summary": "2-3 sentence concise summary",
+  "when": "YYYY-MM-DD or empty",
+  "where": "string or empty",
+  "why": "string",
+  "target_audience": "all|faculty|students",
+  "category": "Emergency|Memo|Notices|Deadline"
+}`;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), CONFIG.REQUEST_TIMEOUT);
+
+      try {
+        const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${CONFIG.GROQ_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: CONFIG.GROQ_MODEL,
+            messages: [
+              {
+                role: "system",
+                content: "You are an NLP extraction specialist. For 'what' field: copy ENTIRE text verbatim with only OCR fixes. For 'summary' field: create a brief 2-3 sentence abstractive summary. For other fields: use intelligent prediction. Return ONLY valid JSON."
+              },
+              {
+                role: "user",
+                content: prompt
+              }
+            ],
+            temperature: 0.05,
+            max_tokens: 2000,
+            response_format: { type: "json_object" }
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          throw new GroqAPIError(
+            `API request failed: ${response.statusText}`,
+            response.status
+          );
+        }
+
+        const data = await response.json();
+
+        if (data.error) {
+          throw new GroqAPIError(`API error: ${data.error.message}`);
+        }
+
+        if (!data.choices || data.choices.length === 0) {
+          throw new GroqAPIError('No response from API');
+        }
+
+        let content = data.choices[0].message.content.trim();
+
+        content = content.replace(/``````\n?/g, '');
+
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          content = jsonMatch[0];
+        }
+
+        const parsed = JSON.parse(content);
+
+        const requiredFields = ['title', 'what', 'summary', 'when', 'where', 'why', 'target_audience', 'category'];
+        for (const field of requiredFields) {
+          if (!(field in parsed)) {
+            console.warn(`⚠ Missing field "${field}", using default`);
+            parsed[field] = getDefaultValue(field);
+          }
+        }
+
+        // Quality check for "what" field verbatim requirement
+        if (parsed.what && parsed.what.length < ocrText.length * 0.7) {
+          console.warn(`⚠ WARNING: "what" field only ${Math.round(parsed.what.length / ocrText.length * 100)}% of original. Expected 95%+`);
+        }
+
+        return parsed;
+
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          throw new GroqAPIError('Request timeout exceeded', 408);
+        }
+        if (error instanceof GroqAPIError) {
+          throw error;
+        }
+        if (error instanceof SyntaxError) {
+          throw new GroqAPIError('Invalid JSON response from API', null, error);
+        }
+        throw new GroqAPIError('Unexpected error during API call', null, error);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    function getDefaultValue(field) {
+      const defaults = {
+        title: '',
+        what: '',
+        summary: '', // NEW
+        when: '',
+        where: '',
+        why: '',
+        target_audience: 'all',
+        category: 'Notices'
+      };
+      return defaults[field] || '';
+    }
+
+    function populateFormFields(fields) {
+      fieldTitle.value = fields.title || '';
+      fieldCategory.value = fields.category || '';
+      fieldTargetAudience.value = fields.target_audience || '';
+      fieldWhat.value = fields.what || '';
+      fieldSummary.value = fields.summary || ''; // NEW
+      fieldWhen.value = fields.when || '';
+      fieldWhere.value = fields.where || '';
+      fieldWhy.value = fields.why || '';
+      setTodayDate();
+    }
+
+    function handleExtractionError(error) {
+      console.error('❌ Extraction error:', error);
+
+      if (error instanceof OCRError) {
+        showStatus(`OCR Error: ${error.message}`, 'error');
+      } else if (error instanceof GroqAPIError) {
+        showStatus(`AI Extraction Error: ${error.message}`, 'error');
+      } else if (error instanceof ValidationError) {
+        showStatus(`Validation Error: ${error.message}`, 'error');
+      } else {
+        showStatus(`Unexpected error: ${error.message}`, 'error');
+      }
+
+      console.error('Full error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack,
+        timestamp: error.timestamp || new Date().toISOString()
+      });
+    }
+
+    // =============================================================================
+    // SAVE TO SUPABASE
+    // =============================================================================
+
+    announcementForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveAnnouncement();
+    });
+
+    async function saveAnnouncement() {
+      try {
+        if (!currentUserProfile) {
+          throw new ValidationError('User profile not loaded. Please refresh the page.');
+        }
+
+        const announcementData = {
+          title: fieldTitle.value.trim(),
+          category: fieldCategory.value,
+          target_audience: fieldTargetAudience.value,
+          description: fieldWhat.value.trim() || null,
+          summary: fieldSummary.value.trim() || null, // NEW - stores in "summary" column
+          scheduled_date: fieldWhen.value || null,
+          location: fieldWhere.value.trim() || null,
+          why: fieldWhy.value.trim() || null,
+          posted_at: getTodayDate(),
+          posted_by: currentUserProfile.full_name || 'Unknown User',
+          posted_by_user_id: currentUserProfile.id
+        };
+
+        if (!announcementData.title) {
+          throw new ValidationError('Title is required', 'title');
+        }
+        if (!announcementData.category) {
+          throw new ValidationError('Category is required', 'category');
+        }
+        if (!announcementData.target_audience) {
+          throw new ValidationError('Target Audience is required', 'target_audience');
+        }
+
+        saveButton.disabled = true;
+        saveButton.textContent = 'Saving...';
+        showStatus('⏳ Saving announcement to database...', 'info');
+
+        const { error } = await supabaseClient
+          .from('announcements')
+          .insert([announcementData]);
+
+        if (error) throw error;
+
+        showStatus('✅ Announcement saved successfully!', 'success');
+        
+        announcementForm.reset();
+        setTodayDate();
+        extractedTextPreview.textContent = 'No text extracted yet';
+        imageInput.value = '';
+        currentImageBlob = null;
+
+        console.log('✅ Announcement saved:', announcementData);
+
+      } catch (error) {
+        console.error('❌ Save error:', error);
+        
+        if (error instanceof ValidationError) {
+          showStatus(`Validation Error: ${error.message}`, 'error');
+          if (error.field) {
+            const field = document.getElementById(`field${error.field.charAt(0).toUpperCase() + error.field.slice(1)}`);
+            if (field) field.focus();
+          }
+        } else {
+          showStatus(`Save Error: ${error.message}`, 'error');
+        }
+      } finally {
+        saveButton.disabled = false;
+        saveButton.textContent = 'Save Announcement';
+      }
+    }
+
+    // =============================================================================
+    // GLOBAL ERROR HANDLER
+    // =============================================================================
+    
+    window.addEventListener('unhandledrejection', (event) => {
+      console.error('❌ Unhandled promise rejection:', event.reason);
+      showStatus('An unexpected error occurred. Please try again.', 'error');
+    });
+
+    window.addEventListener('error', (event) => {
+      console.error('❌ Global error:', event.error);
+    });
+
   </script>
 </body>
 </html>

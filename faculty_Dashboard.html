@@ -1231,19 +1231,17 @@
     }
 
     // ============================================
-    // INITIALIZATION
-    // ============================================
-    document.addEventListener('DOMContentLoaded', async () => { // <-- 1. Add 'async'
+    // INITIALIZATION
+    // ============================================
+   document.addEventListener('DOMContentLoaded', async () => { // <-- 1. Add 'async'
         console.log('🚀 Dashboard initialized');
         
         loadTheme();
+        await loadUserProfile(); // <-- 2. Add 'await'
+        await loadAnnouncements(); // <-- 3. Add 'await'
 
-        await loadUserProfile(); // <-- 2. Wait for the user profile
-        await loadAnnouncements(); // <-- 3. Wait for the announcements
-        subscribeToChanges(); // <-- 4. Start the realtime listener (from Fix 2)
-
-        // NEW: Set dynamic search placeholder with OS-specific key
-        const isMac = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
+        // NEW: Set dynamic search placeholder with OS-specific key
+        const isMac = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.placeholder = `Search... (Press ${isMac ? '⌘' : 'Ctrl'}+K)`;
@@ -1820,57 +1818,17 @@ function searchAnnouncements(preservePage = false) {
             .replace(/'/g, "&#039;");
     }
     
-    // ============================================
-    // REALTIME SUBSCRIPTION (Replaces setInterval)
-    // ============================================
-    function subscribeToChanges() {
-        console.log('📡 Subscribing to realtime changes for dashboard...');
+    // Auto-refresh every 10 seconds
+    setInterval(async () => {
+        console.log(`🔄 Auto-refreshing all dashboard data on page ${currentPage}...`);
         
-        // Create one channel to listen for all public changes
-        const channel = supabaseClient
-            .channel('public-dashboard-changes')
+        // 1. Refresh the announcements (and any poster info)
+        await loadAnnouncements(currentCategory, true);
+        
+        // 2. Refresh the current user's profile (for the header name/avatar)
+        await loadUserProfile();
 
-            // --- Listener 1: Watch the 'announcements' table ---
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'announcements' },
-                (payload) => {
-                    console.log('🔔 Realtime change received for [announcements]!');
-                    // Reload announcements, preserving the user's current page
-                    loadAnnouncements(currentCategory, true);
-                }
-            )
-
-            // --- Listener 2: Watch the 'members' table (for profile updates) ---
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public', table: 'members' },
-                (payload) => {
-                    console.log('🔔 Realtime change received for [members]!');
-                    
-                    // Check if the change affects the *currently logged-in* user
-                    if (payload.new && payload.new.id === currentUserProfile.id) {
-                        console.log('Current user profile updated, reloading profile...');
-                        loadUserProfile(); // This reloads the name/avatar in the header
-                    }
-                    
-                    // Also, always reload announcements in case a *poster's* info changed
-                    console.log("Reloading posts to show any updated user names/avatars...");
-                    loadAnnouncements(currentCategory, true);
-                }
-            )
-
-            // --- Subscribe to the channel ---
-            .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log('✅ Successfully subscribed to realtime dashboard updates!');
-                }
-                if (err) {
-                    console.error('❌ Realtime subscription error:', err);
-                }
-            });
-    }
-
+    }, 10000); // Refreshes every 10 seconds
     // ============================================
     // KEYDOWN LISTENERS (for Esc key)
     // ============================================

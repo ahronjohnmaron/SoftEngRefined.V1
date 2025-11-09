@@ -310,6 +310,7 @@
       background: #4d4d4d;
     }
   </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
@@ -331,12 +332,14 @@
         <button type="button" class="avatar-btn" id="captureBtn">Capture</button>
         <button type="button" class="avatar-btn" id="closeCamBtn">Close Camera</button>
       </div>
-      <input type="text" id="editFullName" placeholder="Full Name" class="ep-input" required="required"/>
-      <input type="email" id="editEmail" placeholder="Email" class="ep-input" required="required"/>
+      <label for="editFullName" style="color: #ffffff; font-size: 1rem; font-weight: 600; margin-bottom: -18px;">Full Name *</label>
+      <input type="text" id="editFullName" placeholder="Enter your full name" class="ep-input" required="required"/>
+      <label for="editEmail" style="color: #ffffff; font-size: 1rem; font-weight: 600; margin-bottom: -18px;">Email *</label>
+      <input type="email" id="editEmail" placeholder="Enter your email" class="ep-input" required="required"/>
+      <label for="editUserType" style="color: #ffffff; font-size: 1rem; font-weight: 600; margin-bottom: -18px;">User Type *</label>
       <select id="editUserType" class="ep-input">
-        <option value="Student">Student</option>
+        <option value="Officer">Officer</option>
         <option value="Faculty">Faculty</option>
-        <option value="Staff">Staff</option>
       </select>
       <button type="submit" id="profileSubmitBtn" class="ep-btn">Save Changes</button>
     </form>
@@ -368,12 +371,19 @@
   </div>
   
   <script>
+    // ============================================
+    // SUPABASE CONFIGURATION
+    // ============================================
+    const SUPABASE_URL = 'https://dqtictujkhxultwoaqaw.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdGljdHVqa2h4dWx0d29hcWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTU1MjksImV4cCI6MjA3Mzg3MTUyOX0.DsnJZ9ylCBlTeVp_KdgRq71cV0f7MojOfuWg1MVGS5I';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     // Default placeholder avatar (gray circle)
     const defaultAvatar = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="82" height="82"%3E%3Ccircle cx="41" cy="41" r="40" fill="%231a1a1a" stroke="%237ed321" stroke-width="2"/%3E%3Ctext x="41" y="50" font-size="24" fill="%237ed321" text-anchor="middle" font-family="Arial"%3E%3F%3C/text%3E%3C/svg%3E';
     let finalAvatarDataUrl = defaultAvatar;
     let lastName = '';
     let lastEmail = '';
-    let lastUserType = 'Student';
+    let lastUserType = 'Officer';
     let stream = null;
     let modelsLoaded = false;
     let cropImageData = null;
@@ -382,6 +392,141 @@
     let cropEndX = 0;
     let cropEndY = 0;
     let isDragging = false;
+    let currentUserProfile = null;
+
+    // ============================================
+    // AUTHENTICATION CHECK FUNCTION
+    // ============================================
+    function checkAuthentication() {
+      const loggedInUser = localStorage.getItem('loggedInUser');
+      if (!loggedInUser) {
+        alert('Please log in to edit your profile');
+        window.location.href = 'SoftEng/faculty_login.html';
+        return null;
+      }
+      try {
+        return JSON.parse(loggedInUser);
+      } catch (error) {
+        console.error('Invalid session data:', error);
+        alert('Invalid session. Please log in again.');
+        window.location.href = 'SoftEng/faculty_login.html';
+        return null;
+      }
+    }
+
+    // ============================================
+    // PROFILE DATA LOADING FUNCTION
+    // ============================================
+    async function loadUserProfile() {
+      const userData = checkAuthentication();
+      if (!userData) return;
+
+      try {
+        const { data, error } = await supabaseClient
+          .from('members')
+          .select('id, full_name, email, user_type, avatar_url')
+          .eq('email', userData.email)
+          .single();
+
+        if (error) throw error;
+
+        // Store the loaded profile data for later use
+        currentUserProfile = data;
+
+        // Pre-populate form fields
+        document.getElementById('editFullName').value = data.full_name || '';
+        document.getElementById('editEmail').value = data.email || '';
+        document.getElementById('editUserType').value = data.user_type || 'Officer';
+
+        // Set avatar preview if exists
+        if (data.avatar_url) {
+          document.getElementById('ep-avatar-preview').src = data.avatar_url;
+          finalAvatarDataUrl = data.avatar_url;
+        }
+
+        console.log('✅ Profile loaded successfully:', data);
+        return data;
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        alert('Failed to load profile data. Please try again.');
+      }
+    }
+
+    // ============================================
+    // AVATAR UPLOAD TO SUPABASE STORAGE
+    // ============================================
+    async function uploadAvatarToSupabase(userId, avatarDataUrl) {
+      try {
+        // Convert data URL to blob using fetch API
+        const response = await fetch(avatarDataUrl);
+        const blob = await response.blob();
+
+        // Generate unique filename using userId and timestamp
+        const fileExt = 'png';
+        const fileName = `${userId}_${Date.now()}.${fileExt}`;
+
+        // Upload blob to Supabase 'Avatar' storage bucket with upsert option
+        const { error: uploadError } = await supabaseClient.storage
+          .from('Avatar')
+          .upload(fileName, blob, {
+            upsert: true,
+            contentType: 'image/png'
+          });
+
+        if (uploadError) {
+          throw new Error(`Avatar upload failed: ${uploadError.message}`);
+        }
+
+        // Retrieve and return the public URL of the uploaded avatar
+        const { data: urlData } = supabaseClient.storage
+          .from('Avatar')
+          .getPublicUrl(fileName);
+
+        if (!urlData || !urlData.publicUrl) {
+          throw new Error('Failed to retrieve public URL for uploaded avatar');
+        }
+
+        console.log('✅ Avatar uploaded successfully:', urlData.publicUrl);
+        return urlData.publicUrl;
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+        throw new Error(`Failed to upload avatar: ${error.message}`);
+      }
+    }
+
+    // ============================================
+    // PROFILE UPDATE TO SUPABASE
+    // ============================================
+    async function updateProfileInSupabase(userId, profileData) {
+      try {
+        // Update members table with profile data
+        const { error } = await supabaseClient
+          .from('members')
+          .update({
+            full_name: profileData.fullName,
+            email: profileData.email,
+            user_type: profileData.userType,
+            avatar_url: profileData.avatarUrl
+          })
+          .eq('id', userId);
+
+        if (error) {
+          throw new Error(`Profile update failed: ${error.message}`);
+        }
+
+        // Update localStorage loggedInUser with new email and full_name
+        const loggedInUser = JSON.parse(localStorage.getItem('loggedInUser'));
+        loggedInUser.email = profileData.email;
+        loggedInUser.full_name = profileData.fullName;
+        localStorage.setItem('loggedInUser', JSON.stringify(loggedInUser));
+
+        console.log('✅ Profile updated successfully in Supabase');
+        return true;
+      } catch (error) {
+        console.error('Error updating profile:', error);
+        throw new Error(`Failed to update profile: ${error.message}`);
+      }
+    }
 
     async function loadFaceApiModels() {
       if (!modelsLoaded) {
@@ -598,27 +743,69 @@
       }
     });
 
-    // Form submission
-    document.getElementById('editProfileForm').addEventListener('submit', function(e) {
+    // Form submission with Supabase integration
+    document.getElementById('editProfileForm').addEventListener('submit', async function(e) {
       e.preventDefault();
       const submitBtn = document.getElementById('profileSubmitBtn');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Saving...';
+      
       const fullName = document.getElementById('editFullName').value.trim();
       const email = document.getElementById('editEmail').value.trim();
       const userType = document.getElementById('editUserType').value;
+      
       try {
-        let avatarUrl = finalAvatarDataUrl;
+        // Use currentUserProfile to get user ID (already loaded on page initialization)
+        if (!currentUserProfile) {
+          throw new Error('User profile not loaded. Please refresh the page.');
+        }
+        
+        let avatarUrl = currentUserProfile.avatar_url;
+        
+        // Check if face detection badge is visible to determine if new avatar should be uploaded
+        const faceDetectedBadge = document.getElementById('faceDetectedBadge');
+        const hasNewAvatar = faceDetectedBadge.style.display !== 'none' && 
+                            finalAvatarDataUrl !== defaultAvatar && 
+                            finalAvatarDataUrl !== currentUserProfile.avatar_url;
+        
+        // Call uploadAvatarToSupabase() only if new face-detected avatar exists
+        if (hasNewAvatar) {
+          avatarUrl = await uploadAvatarToSupabase(currentUserProfile.id, finalAvatarDataUrl);
+        }
+        
+        // Call updateProfileInSupabase() with all profile data including avatar URL
+        await updateProfileInSupabase(currentUserProfile.id, {
+          fullName,
+          email,
+          userType,
+          avatarUrl
+        });
+        
+        // Show success alert on successful update
         alert('✅ Profile updated successfully!');
-        document.getElementById('editProfileModal').style.display = 'none';
-        showProfile(fullName, email, userType, avatarUrl);
-        lastName = fullName;
-        lastEmail = email;
-        lastUserType = userType;
-        finalAvatarDataUrl = avatarUrl;
+        
+        // Redirect to 'SoftEng/faculty_Dashboard.html' after successful save
+        window.location.href = 'SoftEng/faculty_Dashboard.html';
+        
       } catch (error) {
-        alert('Failed to update profile: ' + error.message);
+        // Add comprehensive error handling with user-friendly messages for different failure scenarios
+        console.error('Profile update error:', error);
+        let errorMessage = 'Failed to update profile. ';
+        
+        if (error.message.includes('Avatar upload failed')) {
+          errorMessage += 'There was a problem uploading your avatar. Please try again.';
+        } else if (error.message.includes('Profile update failed')) {
+          errorMessage += 'There was a problem saving your profile data. Please try again.';
+        } else if (error.message.includes('not loaded')) {
+          errorMessage += error.message;
+        } else {
+          errorMessage += error.message;
+        }
+        
+        alert(errorMessage);
+        // Keep form data intact on errors to allow retry
       } finally {
+        // Ensure submit button is re-enabled and text is reset in finally block
         submitBtn.disabled = false;
         submitBtn.textContent = 'Save Changes';
         if (stream) {
@@ -664,11 +851,15 @@
     }
 
     // Set initial values on page load
-    document.addEventListener('DOMContentLoaded', function() {
-      document.getElementById('editFullName').value = '';
-      document.getElementById('editEmail').value = '';
-      document.getElementById('editUserType').value = 'Student';
-      document.getElementById('ep-avatar-preview').src = defaultAvatar;
+    document.addEventListener('DOMContentLoaded', async function() {
+      // Check authentication first
+      const userData = checkAuthentication();
+      if (!userData) return;
+
+      // Load user profile data
+      await loadUserProfile();
+
+      // Initialize face detection badge
       document.getElementById('faceDetectedBadge').style.display = 'none';
     });
   </script>

@@ -1231,17 +1231,19 @@
     }
 
     // ============================================
-    // INITIALIZATION
-    // ============================================
-    document.addEventListener('DOMContentLoaded', () => {
-        console.log('🚀 Dashboard initialized');
-        
-        loadTheme();
-        loadUserProfile();
-        loadAnnouncements();
+    // INITIALIZATION
+    // ============================================
+    document.addEventListener('DOMContentLoaded', async () => { // <-- 1. Add 'async'
+        console.log('🚀 Dashboard initialized');
+        
+        loadTheme();
 
-        // NEW: Set dynamic search placeholder with OS-specific key
-        const isMac = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
+        await loadUserProfile(); // <-- 2. Wait for the user profile
+        await loadAnnouncements(); // <-- 3. Wait for the announcements
+        subscribeToChanges(); // <-- 4. Start the realtime listener (from Fix 2)
+
+        // NEW: Set dynamic search placeholder with OS-specific key
+        const isMac = /(Mac|iPhone|iPod|iPad)/i.test(navigator.platform);
         const searchInput = document.getElementById('searchInput');
         if (searchInput) {
             searchInput.placeholder = `Search... (Press ${isMac ? '⌘' : 'Ctrl'}+K)`;
@@ -1818,11 +1820,34 @@ function searchAnnouncements(preservePage = false) {
             .replace(/'/g, "&#039;");
     }
     
-    // Auto-refresh every 10 seconds
-    setInterval(() => {
-        console.log(`🔄 Auto-refreshing announcements on page ${currentPage}...`);
-        loadAnnouncements(currentCategory, true); // Pass true to preserve current page
-    }, 10000);
+    // ============================================
+    // REALTIME SUBSCRIPTION (Replaces setInterval)
+    // ============================================
+    function subscribeToChanges() {
+        console.log('📡 Subscribing to realtime changes...');
+        
+        const channel = supabaseClient
+            .channel('public:announcements')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'announcements' },
+                (payload) => {
+                    console.log('🔔 Realtime change received!', payload);
+                    // Reload announcements, preserving the user's current page
+                    loadAnnouncements(currentCategory, true);
+                }
+            )
+            .subscribe((status, err) => {
+                 if (status === 'SUBSCRIBED') {
+                    console.log('✅ Successfully subscribed to realtime!');
+                }
+                if (err) {
+                    console.error('❌ Realtime subscription error:', err);
+                }
+            });
+    }
+
+    // ============================================
 
     // ============================================
     // KEYDOWN LISTENERS (for Esc key)

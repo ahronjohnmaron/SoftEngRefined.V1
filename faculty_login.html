@@ -8,7 +8,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="susi.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google reCAPTCHA v2 Script -->
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script>
@@ -16,12 +15,13 @@
             theme: {
                 extend: {
                     colors: {
-                        'ph-orange': '#ffa31a',
-                        'ph-orange-hover': '#ff9500',
-                        'ph-dark': '#1b1b1b',
-                        'ph-black': '#000000',
-                        'ph-gray': '#2a2a2a',
-                        'ph-light-gray': '#999999',
+                        /* --- 'WISE WALLET' THEME APPLIED --- */
+                        'ph-orange': '#9FE870',           /* Main accent (bright green) */
+                        'ph-orange-hover': '#7acc50',      /* Accent hover (darker green) */
+                        'ph-dark': '#000000',             /* Main BG (black) */
+                        'ph-black': '#1a1a1a',            /* Input BG (dark gray / search-bg) */
+                        'ph-gray': '#2d5514',             /* Borders (dark green / card-border) */
+                        'ph-light-gray': '#b8d6a0',        /* Secondary text (light green / text-secondary) */
                     }
                 }
             }
@@ -35,26 +35,41 @@
             background-image: url('BG.jpg');
             background-position: center;
         }
+
+        /* --- THEME OVERRIDE FOR GRADIENT BUTTON --- */
+        /* This applies the professional gradient button from your dashboard */
+        #loginButton {
+            background: linear-gradient(135deg, #9FE870 0%, #7acc50 100%);
+            color: #000000; /* Black text for readability on bright green */
+            box-shadow: 0 4px 12px rgba(159, 232, 112, 0.3);
+        }
+        #loginButton:hover {
+            opacity: 0.9;
+            box-shadow: 0 8px 20px rgba(159, 232, 112, 0.3);
+        }
+
+        /* --- THEME OVERRIDE FOR LOGO SHADOW --- */
+        /* This applies the signature green 'glow' */
+        .logo-themed {
+            border-color: #9FE870;
+            box-shadow: 0 0 20px rgba(159, 232, 112, 0.5);
+        }
     </style>
 </head>
 <body class="bg-ph-dark">
 
     <div class="flex min-h-screen flex-col lg:flex-row">
-        <!-- Login Form Section -->
         <div class="w-full lg:w-2/5 flex items-center justify-center p-6 sm:p-8 lg:p-12 bg-ph-dark order-2 lg:order-1">
             <div class="w-full max-w-md text-center">
                 
-                <!-- Logo -->
                 <div class="mx-auto w-20 h-20 sm:w-24 sm:h-24 mb-6">
-                    <img src="CCSICTLOGOCROP.png" alt="Department Logo" class="w-full h-full object-cover rounded-full border-4 border-ph-orange shadow-2xl shadow-ph-orange/50">
+                    <img src="CCSICTLOGOCROP.png" alt="Department Logo" class="w-full h-full object-cover rounded-full border-4 logo-themed">
                 </div>
                 
-                <!-- Headings -->
                 <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-ph-orange mb-2">Department</h2>
                 <h3 class="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-3">Communication Hub</h3>
                 <p class="text-ph-light-gray text-sm sm:text-base mb-8">Faculty Login Portal</p>
 
-                <!-- Login Form -->
                 <form id="loginForm" class="space-y-5">
                     <div>
                         <input 
@@ -68,7 +83,6 @@
                         >
                     </div>
                     
-                    <!-- Password with Toggle -->
                     <div class="relative">
                         <input 
                             type="password" 
@@ -95,7 +109,6 @@
                         </button>
                     </div>
 
-                    <!-- Google reCAPTCHA v2 Widget -->
                     <div class="flex justify-center">
                         <div class="g-recaptcha" data-sitekey="6LeXz-0rAAAAAJS-CB-4LwZrIF6jvKW6V8xHBQrk" data-theme="dark"></div>
                     </div>
@@ -104,25 +117,22 @@
                         <button 
                             type="submit" 
                             id="loginButton"
-                            class="w-full bg-ph-orange hover:bg-ph-orange-hover text-black font-bold py-3.5 sm:py-4 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg hover:shadow-ph-orange/30 text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                            class="w-full text-black font-bold py-3.5 sm:py-4 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                         >
                             Login
                         </button>
                     </div>
                 </form>
                 <div class="mt-4">
-  <a href="forgot_Password.html" 
-     class="text-sm text-ph-light-gray hover:text-ph-orange transition-colors duration-300">
-     Forgot Password?
-  </a>
-</div>
-                <!-- Message Area -->
+                    <a href="forgot_Password.html" 
+                        class="text-sm text-ph-light-gray hover:text-ph-orange transition-colors duration-300">
+                        Forgot Password?
+                    </a>
+                </div>
                 <div id="messageArea" class="mt-4 text-center text-sm sm:text-base font-semibold text-red-500 min-h-[24px]"></div>
                 
-                <!-- Attempt Counter -->
                 <div id="attemptCounter" class="mt-2 text-center text-xs sm:text-sm text-ph-light-gray"></div>
                 
-                <!-- Back Link -->
                 <div class="mt-6">
                     <a href="landing_Page.html" class="inline-flex items-center gap-2 text-sm sm:text-base text-ph-light-gray hover:text-ph-orange transition-colors duration-300">
                         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -135,12 +145,9 @@
             </div>
         </div>
         
-        <!-- Background Image Section -->
         <div class="hidden lg:flex w-3/5 flex-col justify-between p-8 xl:p-12 bg-image-section bg-ph-black text-white order-1 lg:order-2 relative">
-            <!-- Gradient Overlay -->
             <div class="absolute inset-0 bg-gradient-to-br from-ph-black/60 via-ph-black/40 to-transparent"></div>
             
-            <!-- Content -->
             <div class="relative text-xl xl:text-2xl font-bold text-ph-orange">
                 🌐 A centralized web-based Communication Hub Platform
             </div>
@@ -171,9 +178,6 @@
     const MAX_ATTEMPTS = 5;
     const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes in milliseconds
 
-    // Temporary user data storage for OTP verification
-    let tempUserData = null;
-
     // Password Toggle Functionality
     togglePassword.addEventListener('click', function() {
         const type = passwordInput.getAttribute('type');
@@ -187,211 +191,6 @@
             eyeIconOpen.classList.add('hidden');
         }
     });
-
-    // Email masking utility function
-    function maskEmail(email) {
-        if (!email) return '';
-        const [localPart, domain] = email.split('@');
-        if (!localPart || !domain) return email;
-        
-        // Show first character and mask the rest of local part
-        const maskedLocal = localPart[0] + '***';
-        return `${maskedLocal}@${domain}`;
-    }
-
-    // Show OTP Modal
-    function showOTPModal() {
-        const otpModal = document.getElementById('otpModal');
-        const otpEmailDisplay = document.getElementById('otpEmailDisplay');
-        const otpInput = document.getElementById('otpInput');
-        const otpErrorMessage = document.getElementById('otpErrorMessage');
-        const otpSuccessMessage = document.getElementById('otpSuccessMessage');
-        
-        // Display modal
-        otpModal.classList.remove('hidden');
-        
-        // Populate email display with masked format
-        if (tempUserData && tempUserData.email) {
-            otpEmailDisplay.textContent = maskEmail(tempUserData.email);
-        }
-        
-        // Clear previous OTP input and messages
-        otpInput.value = '';
-        otpErrorMessage.textContent = '';
-        otpSuccessMessage.textContent = '';
-        
-        // Attach event listeners when modal is shown (buttons now exist in DOM)
-        attachOTPEventListeners();
-        
-        // Focus on OTP input field
-        setTimeout(() => {
-            otpInput.focus();
-        }, 100);
-    }
-    
-    // Attach event listeners to OTP modal buttons
-    function attachOTPEventListeners() {
-        // Close button
-        const closeOTPModalButton = document.getElementById('closeOTPModal');
-        if (closeOTPModalButton && !closeOTPModalButton.hasAttribute('data-listener-attached')) {
-            closeOTPModalButton.addEventListener('click', hideOTPModal);
-            closeOTPModalButton.setAttribute('data-listener-attached', 'true');
-            console.log('✅ Close button listener attached');
-        }
-        
-        // Verify button
-        const verifyOTPButton = document.getElementById('verifyOTPButton');
-        if (verifyOTPButton && !verifyOTPButton.hasAttribute('data-listener-attached')) {
-            verifyOTPButton.addEventListener('click', verifyOTP);
-            verifyOTPButton.setAttribute('data-listener-attached', 'true');
-            console.log('✅ Verify button listener attached');
-        }
-        
-        // Resend button
-        const resendOTPButton = document.getElementById('resendOTPButton');
-        if (resendOTPButton && !resendOTPButton.hasAttribute('data-listener-attached')) {
-            resendOTPButton.addEventListener('click', resendOTP);
-            resendOTPButton.setAttribute('data-listener-attached', 'true');
-            console.log('✅ Resend button listener attached');
-        }
-        
-        // OTP input - Enter key and numeric only
-        const otpInput = document.getElementById('otpInput');
-        if (otpInput && !otpInput.hasAttribute('data-listener-attached')) {
-            otpInput.addEventListener('keypress', function(event) {
-                if (event.key === 'Enter') {
-                    event.preventDefault();
-                    verifyOTP();
-                }
-            });
-            
-            otpInput.addEventListener('input', function(event) {
-                this.value = this.value.replace(/[^0-9]/g, '');
-            });
-            
-            otpInput.setAttribute('data-listener-attached', 'true');
-            console.log('✅ OTP input listeners attached');
-        }
-    }
-
-    // Hide OTP Modal
-    function hideOTPModal() {
-        const otpModal = document.getElementById('otpModal');
-        const otpInput = document.getElementById('otpInput');
-        const otpErrorMessage = document.getElementById('otpErrorMessage');
-        const otpSuccessMessage = document.getElementById('otpSuccessMessage');
-        
-        // Hide modal
-        otpModal.classList.add('hidden');
-        
-        // Clear temporary user data
-        tempUserData = null;
-        
-        // Reset OTP form state
-        otpInput.value = '';
-        otpErrorMessage.textContent = '';
-        otpSuccessMessage.textContent = '';
-        
-        // Reset login form state
-        loginForm.reset();
-        messageArea.textContent = '';
-        messageArea.classList.remove('text-ph-orange');
-        messageArea.classList.add('text-red-500');
-        
-        // Reset reCAPTCHA
-        if (typeof grecaptcha !== 'undefined') {
-            grecaptcha.reset();
-        }
-    }
-
-    // Send OTP function
-    async function sendOTP(email) {
-        const submitButton = loginForm.querySelector('button[type="submit"]');
-        
-        try {
-            // Show loading state
-            submitButton.disabled = true;
-            submitButton.textContent = 'Sending OTP...';
-            submitButton.classList.add('opacity-70', 'cursor-not-allowed');
-            messageArea.textContent = 'Sending verification code...';
-            messageArea.classList.remove('text-red-500');
-            messageArea.classList.add('text-ph-orange');
-            
-            // Make POST request to send OTP
-            const response = await fetch('http://localhost:3000/send-otp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email })
-            });
-            
-            // Handle network errors
-            if (!response.ok) {
-                let errorMessage = 'Failed to send verification code';
-                
-                try {
-                    const data = await response.json();
-                    errorMessage = data.message || errorMessage;
-                } catch (parseError) {
-                    // If response is not JSON, use status-based message
-                    if (response.status === 500) {
-                        errorMessage = 'Server error. Please try again later';
-                    } else if (response.status === 400) {
-                        errorMessage = 'Invalid request. Please try again';
-                    } else if (response.status >= 500) {
-                        errorMessage = 'Server error. Please try again later';
-                    }
-                }
-                
-                throw new Error(errorMessage);
-            }
-            
-            const data = await response.json();
-            
-            // Success - show OTP modal
-            messageArea.textContent = '✓ Verification code sent to your email';
-            messageArea.classList.add('text-ph-orange');
-            messageArea.classList.remove('text-red-500');
-            showOTPModal();
-            
-        } catch (error) {
-            // Handle different error types
-            console.error('Error sending OTP:', error);
-            
-            let displayMessage = '✗ Failed to send verification code. Please try again.';
-            
-            // Network error (no internet connection)
-            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-                displayMessage = '✗ Network error. Please check your internet connection.';
-            } 
-            // Server error
-            else if (error.message.includes('Server error')) {
-                displayMessage = '✗ Server error. Please try again later.';
-            }
-            // Custom error message from server
-            else if (error.message) {
-                displayMessage = `✗ ${error.message}`;
-            }
-            
-            messageArea.textContent = displayMessage;
-            messageArea.classList.remove('text-ph-orange');
-            messageArea.classList.add('text-red-500');
-            
-            // Clear temporary user data on error
-            tempUserData = null;
-            
-            // Reset reCAPTCHA
-            if (typeof grecaptcha !== 'undefined') {
-                grecaptcha.reset();
-            }
-        } finally {
-            // Reset button state
-            submitButton.disabled = false;
-            submitButton.textContent = 'Login';
-            submitButton.classList.remove('opacity-70', 'cursor-not-allowed');
-        }
-    }
 
     // Check lockout status
     function checkLockout() {
@@ -473,41 +272,38 @@
         submitButton.classList.add('opacity-70', 'cursor-not-allowed');
 
         try {
-            // First, check if user exists in admins table
+            // First, check if user exists in admin_User table
             const { data: adminData, error: adminError } = await supabaseClient
-                .from('admins')
+                .from('admin_user')
                 .select('*')
                 .eq('email', email)
                 .eq('password', password)
                 .maybeSingle();
 
-            // If admin user found, proceed to OTP verification
+            // If admin user found, redirect to admin page
             if (adminData) {
                 // Login successful - reset attempts
                 localStorage.removeItem('loginLockout');
                 loginAttempts = 0;
                 
-                messageArea.textContent = '✓ Credentials verified!';
+                messageArea.textContent = '✓ Admin Login Successful!';
                 messageArea.classList.remove('text-red-500');
                 messageArea.classList.add('text-ph-orange');
                 
-                // Store user data temporarily (NOT in localStorage yet)
-                tempUserData = {
+                // Store admin session (excluding password)
+                const adminInfo = {
+                    id: adminData.id,
                     email: adminData.email,
                     userType: 'admin',
-                    userData: {
-                        id: adminData.id,
-                        email: adminData.email,
-                        userType: 'admin',
-                        loginTime: new Date().toISOString()
-                    },
-                    timestamp: new Date().getTime()
+                    loginTime: new Date().toISOString()
                 };
+                localStorage.setItem('loggedInUser', JSON.stringify(adminInfo));
                 
-                console.log('✅ Admin credentials verified, sending OTP:', adminData.email);
+                console.log('✅ Admin login successful:', adminData.email);
                 
-                // Send OTP instead of immediate redirect
-                await sendOTP(adminData.email);
+                setTimeout(() => {
+                    window.location.href = ADMIN_PAGE;
+                }, 1000);
                 return;
             }
 
@@ -519,36 +315,33 @@
                 .eq('password', password)
                 .maybeSingle();
 
-            // If member found with matching credentials, proceed to OTP verification
+            // If member found with matching credentials
             if (memberData) {
                 // Login successful - reset attempts
                 localStorage.removeItem('loginLockout');
                 loginAttempts = 0;
                 
-                messageArea.textContent = '✓ Credentials verified!';
+                messageArea.textContent = '✓ Login Successful!';
                 messageArea.classList.remove('text-red-500');
                 messageArea.classList.add('text-ph-orange');
                 
-                // Store user data temporarily (NOT in localStorage yet)
-                tempUserData = {
+                // Store member session (excluding password)
+                const memberInfo = {
+                    id: memberData.id,
                     email: memberData.email,
+                    full_name: memberData.full_name,
+                    user_type: memberData.user_type,
                     userType: 'member',
-                    userData: {
-                        id: memberData.id,
-                        email: memberData.email,
-                        full_name: memberData.full_name,
-                        user_type: memberData.user_type,
-                        userType: 'member',
-                        created_at: memberData.created_at,
-                        loginTime: new Date().toISOString()
-                    },
-                    timestamp: new Date().getTime()
+                    created_at: memberData.created_at,
+                    loginTime: new Date().toISOString()
                 };
+                localStorage.setItem('loggedInUser', JSON.stringify(memberInfo));
                 
-                console.log('✅ Member credentials verified, sending OTP:', memberData.email);
+                console.log('✅ Member login successful:', memberData.email);
                 
-                // Send OTP instead of immediate redirect
-                await sendOTP(memberData.email);
+                setTimeout(() => {
+                    window.location.href = MEMBER_PAGE;
+                }, 1000);
                 return;
             }
 
@@ -590,392 +383,7 @@
             submitButton.classList.remove('opacity-70', 'cursor-not-allowed');
         }
     });
-
-    // Verify OTP function
-    async function verifyOTP() {
-        console.log('🔍 verifyOTP function called');
-        
-        const otpInput = document.getElementById('otpInput');
-        const otpErrorMessage = document.getElementById('otpErrorMessage');
-        const verifyButton = document.getElementById('verifyOTPButton');
-        const otp = otpInput.value.trim();
-        
-        console.log('📝 OTP entered:', otp);
-        console.log('👤 Temp user data:', tempUserData);
-        
-        // Clear previous error messages
-        otpErrorMessage.textContent = '';
-        
-        // Validate OTP is 6 digits before sending
-        if (!otp) {
-            console.log('❌ No OTP entered');
-            otpErrorMessage.textContent = '✗ Please enter the verification code';
-            return;
-        }
-        
-        if (!/^\d{6}$/.test(otp)) {
-            console.log('❌ OTP format invalid');
-            otpErrorMessage.textContent = '✗ Code must be exactly 6 digits';
-            return;
-        }
-        
-        // Check if we have temporary user data
-        if (!tempUserData || !tempUserData.email) {
-            console.log('❌ No temp user data');
-            otpErrorMessage.textContent = '✗ Session expired. Please login again';
-            setTimeout(() => {
-                hideOTPModal();
-            }, 2000);
-            return;
-        }
-        
-        console.log('✅ Validation passed, sending verification request...');
-        
-        try {
-            // Show loading state and disable verify button
-            verifyButton.disabled = true;
-            verifyButton.textContent = 'Verifying...';
-            verifyButton.classList.add('opacity-70', 'cursor-not-allowed');
-            
-            console.log('📡 Sending verification request to server...');
-            
-            // Make POST request to verify OTP
-            const response = await fetch('http://localhost:3000/verify-otp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    email: tempUserData.email,
-                    otp: otp
-                })
-            });
-            
-            console.log('📥 Server response status:', response.status);
-            
-            // Handle network errors
-            if (!response.ok) {
-                console.log('❌ Response not OK');
-                let errorMessage = 'Invalid verification code';
-                
-                try {
-                    const data = await response.json();
-                    console.log('📄 Error response data:', data);
-                    errorMessage = data.message || errorMessage;
-                    
-                    // Check if verification failed
-                    if (!data.success) {
-                        handleFailedVerification(errorMessage);
-                        return;
-                    }
-                } catch (parseError) {
-                    console.log('❌ Parse error:', parseError);
-                    // If response is not JSON, use status-based message
-                    if (response.status === 500) {
-                        errorMessage = 'Server error. Please try again later';
-                    } else if (response.status === 400) {
-                        errorMessage = 'Invalid verification code';
-                    } else if (response.status >= 500) {
-                        errorMessage = 'Server error. Please try again later';
-                    }
-                }
-                
-                handleFailedVerification(errorMessage);
-                return;
-            }
-            
-            const data = await response.json();
-            console.log('📄 Success response data:', data);
-            
-            if (data.success) {
-                console.log('✅ OTP verified successfully, calling handleSuccessfulVerification');
-                // Handle successful OTP verification
-                handleSuccessfulVerification();
-            } else {
-                console.log('❌ OTP verification failed');
-                // Handle failed OTP verification
-                handleFailedVerification(data.message || 'Invalid verification code');
-            }
-        } catch (error) {
-            // Handle different error types
-            console.error('❌ Error verifying OTP:', error);
-            
-            let errorMessage = 'Connection error. Please try again.';
-            
-            // Network error (no internet connection)
-            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-                errorMessage = 'Network error. Please check your internet connection.';
-            }
-            // Server error
-            else if (error.message.includes('Server error')) {
-                errorMessage = 'Server error. Please try again later.';
-            }
-            // Custom error message
-            else if (error.message) {
-                errorMessage = error.message;
-            }
-            
-            handleFailedVerification(errorMessage);
-        } finally {
-            // Re-enable verify button
-            verifyButton.disabled = false;
-            verifyButton.textContent = 'Verify Code';
-            verifyButton.classList.remove('opacity-70', 'cursor-not-allowed');
-        }
-    }
-    
-    // Handle successful OTP verification
-    function handleSuccessfulVerification() {
-        console.log('🎉 handleSuccessfulVerification called');
-        console.log('👤 tempUserData:', tempUserData);
-        
-        if (!tempUserData || !tempUserData.userData) {
-            console.error('❌ No temporary user data found');
-            return;
-        }
-        
-        console.log('💾 Storing user data in localStorage:', tempUserData.userData);
-        
-        // Store user session data in localStorage (same format as original login)
-        localStorage.setItem('loggedInUser', JSON.stringify(tempUserData.userData));
-        
-        // Show success message briefly
-        const otpErrorMessage = document.getElementById('otpErrorMessage');
-        otpErrorMessage.textContent = '✓ Verification successful! Redirecting...';
-        otpErrorMessage.classList.remove('text-red-500');
-        otpErrorMessage.classList.add('text-ph-orange');
-        
-        // Clear temporary user data
-        const userType = tempUserData.userType;
-        console.log('🔄 User type:', userType);
-        tempUserData = null;
-        
-        // Redirect to appropriate dashboard based on userType
-        console.log('⏱️ Setting redirect timeout...');
-        setTimeout(() => {
-            console.log('🚀 Redirecting now...');
-            if (userType === 'admin') {
-                console.log('➡️ Redirecting to:', ADMIN_PAGE);
-                window.location.href = ADMIN_PAGE;
-            } else {
-                console.log('➡️ Redirecting to:', MEMBER_PAGE);
-                window.location.href = MEMBER_PAGE;
-            }
-        }, 1000);
-    }
-    
-    // Handle failed OTP verification
-    function handleFailedVerification(errorMessage) {
-        const otpInput = document.getElementById('otpInput');
-        const otpErrorMessage = document.getElementById('otpErrorMessage');
-        
-        // Display error message in modal
-        otpErrorMessage.textContent = `✗ ${errorMessage}`;
-        otpErrorMessage.classList.add('text-red-500');
-        otpErrorMessage.classList.remove('text-ph-orange');
-        
-        // Clear OTP input field
-        otpInput.value = '';
-        
-        // Focus back on input for retry
-        otpInput.focus();
-        
-        // Keep modal open for retry (no action needed, modal stays visible)
-    }
-
-    // Resend OTP cooldown state
-    let resendCooldownActive = false;
-    let resendCooldownSeconds = 0;
-
-    // Resend OTP function
-    async function resendOTP() {
-        // Check if cooldown is active
-        if (resendCooldownActive) {
-            return;
-        }
-        
-        // Check if we have temporary user data
-        if (!tempUserData || !tempUserData.email) {
-            const otpErrorMessage = document.getElementById('otpErrorMessage');
-            otpErrorMessage.textContent = '✗ Session expired. Please login again';
-            otpErrorMessage.classList.add('text-red-500');
-            setTimeout(() => {
-                hideOTPModal();
-            }, 2000);
-            return;
-        }
-        
-        const resendButton = document.getElementById('resendOTPButton');
-        const otpSuccessMessage = document.getElementById('otpSuccessMessage');
-        const otpErrorMessage = document.getElementById('otpErrorMessage');
-        
-        // Clear previous messages
-        otpSuccessMessage.textContent = '';
-        otpErrorMessage.textContent = '';
-        
-        try {
-            // Show loading state
-            resendButton.disabled = true;
-            resendButton.textContent = 'Sending...';
-            
-            // Make POST request to send OTP
-            const response = await fetch('http://localhost:3000/send-otp', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email: tempUserData.email })
-            });
-            
-            // Handle network errors
-            if (!response.ok) {
-                let errorMessage = 'Failed to send verification code';
-                
-                try {
-                    const data = await response.json();
-                    errorMessage = data.message || errorMessage;
-                } catch (parseError) {
-                    // If response is not JSON, use status-based message
-                    if (response.status === 500) {
-                        errorMessage = 'Server error. Please try again later';
-                    } else if (response.status === 400) {
-                        errorMessage = 'Invalid request. Please try again';
-                    } else if (response.status >= 500) {
-                        errorMessage = 'Server error. Please try again later';
-                    }
-                }
-                
-                throw new Error(errorMessage);
-            }
-            
-            const data = await response.json();
-            
-            // Display success message
-            otpSuccessMessage.textContent = '✓ New verification code sent to your email';
-            otpSuccessMessage.classList.add('text-ph-orange');
-            
-            // Start 30-second cooldown timer
-            resendCooldownActive = true;
-            resendCooldownSeconds = 30;
-            
-            // Update button with countdown
-            const countdownInterval = setInterval(() => {
-                resendCooldownSeconds--;
-                resendButton.textContent = `Resend Code (${resendCooldownSeconds}s)`;
-                
-                if (resendCooldownSeconds <= 0) {
-                    clearInterval(countdownInterval);
-                    resendCooldownActive = false;
-                    resendButton.disabled = false;
-                    resendButton.textContent = 'Resend Code';
-                }
-            }, 1000);
-            
-            // Clear success message after 5 seconds
-            setTimeout(() => {
-                otpSuccessMessage.textContent = '';
-            }, 5000);
-            
-        } catch (error) {
-            // Handle different error types
-            console.error('Error resending OTP:', error);
-            
-            let displayMessage = '✗ Failed to send verification code. Please try again.';
-            
-            // Network error (no internet connection)
-            if (error.message === 'Failed to fetch' || error.name === 'TypeError') {
-                displayMessage = '✗ Network error. Please check your internet connection.';
-            }
-            // Server error
-            else if (error.message.includes('Server error')) {
-                displayMessage = '✗ Server error. Please try again later.';
-            }
-            // Custom error message from server
-            else if (error.message) {
-                displayMessage = `✗ ${error.message}`;
-            }
-            
-            otpErrorMessage.textContent = displayMessage;
-            otpErrorMessage.classList.add('text-red-500');
-            
-            // Reset button state
-            resendButton.disabled = false;
-            resendButton.textContent = 'Resend Code';
-        }
-    }
-
-    // Event listeners are now attached when modal is shown (see attachOTPEventListeners function)
     </script>
-
-    <!-- OTP Verification Modal -->
-    <div id="otpModal" class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-        <div class="bg-ph-dark border-2 border-ph-orange rounded-lg p-6 sm:p-8 max-w-md w-full shadow-2xl shadow-ph-orange/30">
-            <!-- Close Button -->
-            <div class="flex justify-end mb-2">
-                <button 
-                    id="closeOTPModal" 
-                    type="button"
-                    class="text-ph-light-gray hover:text-ph-orange transition-colors duration-300 focus:outline-none"
-                    aria-label="Close modal"
-                >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
-            </div>
-
-            <!-- Modal Title -->
-            <h2 class="text-2xl sm:text-3xl font-bold text-ph-orange mb-2 text-center">Verify Your Identity</h2>
-            <p class="text-ph-light-gray text-sm sm:text-base mb-6 text-center">Enter the verification code sent to your email</p>
-
-            <!-- Email Display -->
-            <div class="mb-6 text-center">
-                <p class="text-white text-sm sm:text-base">
-                    Code sent to: <span id="otpEmailDisplay" class="text-ph-orange font-semibold"></span>
-                </p>
-            </div>
-
-            <!-- OTP Input Field -->
-            <div class="mb-5">
-                <input 
-                    type="text" 
-                    id="otpInput" 
-                    placeholder="Enter 6-digit code" 
-                    maxlength="6"
-                    pattern="[0-9]{6}"
-                    inputmode="numeric"
-                    autocomplete="one-time-code"
-                    class="w-full px-4 py-3 sm:py-3.5 bg-ph-black border-2 border-ph-gray rounded-lg text-white placeholder-ph-light-gray focus:outline-none focus:border-ph-orange focus:ring-4 focus:ring-ph-orange/30 transition-all duration-300 text-center text-lg sm:text-xl tracking-widest font-semibold"
-                >
-            </div>
-
-            <!-- Error Message Area -->
-            <div id="otpErrorMessage" class="mb-4 text-center text-sm sm:text-base font-semibold text-red-500 min-h-[24px]"></div>
-
-            <!-- Verify Button -->
-            <button 
-                id="verifyOTPButton" 
-                type="button"
-                class="w-full bg-ph-orange hover:bg-ph-orange-hover text-black font-bold py-3.5 sm:py-4 px-4 rounded-lg transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg hover:shadow-ph-orange/30 text-base sm:text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none mb-3"
-            >
-                Verify Code
-            </button>
-
-            <!-- Resend Button -->
-            <button 
-                id="resendOTPButton" 
-                type="button"
-                class="w-full bg-ph-gray hover:bg-ph-light-gray text-white font-semibold py-3 px-4 rounded-lg transition-all duration-300 text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-                Resend Code
-            </button>
-
-            <!-- Success Message Area (for resend confirmation) -->
-            <div id="otpSuccessMessage" class="mt-4 text-center text-sm sm:text-base font-semibold text-ph-orange min-h-[24px]"></div>
-        </div>
-    </div>
 
 </body>
 </html>
-
-

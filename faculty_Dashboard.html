@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-R">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="CCSICTLOGOCROP.png">
     <title>DCH Dashboard</title>
@@ -599,6 +599,26 @@
             border: 1px solid var(--card-border);
         }
 
+        /* --- NEW: Read More Button --- */
+        .btn-read-more {
+            background-color: transparent;
+            border: 1px solid var(--accent-green);
+            color: var(--accent-green);
+            padding: 5px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-read-more:hover {
+            background-color: var(--accent-green);
+            color: #000000;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(159, 232, 112, 0.2);
+        }
+
         .highlight-text {
             background-color: rgba(159, 232, 112, 0.25);
             color: var(--text-primary);
@@ -744,6 +764,27 @@
             transform: rotate(90deg);
         }
         
+        /* --- NEW: View Modal Body --- */
+        .view-modal-body {
+            padding-top: 10px;
+            line-height: 1.7;
+        }
+        .view-modal-body .date {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            margin-bottom: 12px;
+            border-left: 3px solid var(--accent-green);
+            padding-left: 10px;
+        }
+        .view-modal-body .description {
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            white-space: pre-wrap; /* Preserves line breaks from the description */
+            margin-top: 20px;
+            line-height: 1.7;
+        }
+
         /* NEW: Themed Form Styles */
         .form-group {
             margin-bottom: 20px;
@@ -999,6 +1040,19 @@
             </form>
         </div>
     </div>
+
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="viewModalTitle">Announcement Details</h2>
+                <span class="close-modal" onclick="closeViewModal()" title="Close (Esc)">&times;</span>
+            </div>
+            <div class="view-modal-body" id="viewModalBody">
+                <p class="description">Loading details...</p>
+            </div>
+        </div>
+    </div>
+
 
     <script>
     // ============================================
@@ -1467,19 +1521,21 @@ function displayAnnouncements(announcements, searchTerm = '') {
                 <div class="card-header">
                     ${cardHeaderIcons} </div>
                 <div class="card-content">
-                    <p class="date">Date posted:${formatDate(announcement.scheduled_date)} &nbsp &nbsp &nbsp &nbsp  &nbsp &nbsp  Schedule Date: November 10, 2025 </p>
+                    <p class="date"><strong>Date posted:</strong> ${formatDate(announcement.created_at)}</p>
+                    <p class="date"><strong>Date scheduled:</strong> ${formatDate(announcement.scheduled_date)}</p>
                     <h3 class="title">${highlightText(escapeHtml(announcement.title), searchTerm)}</h3>
-                    <p class="description">${highlightText(escapeHtml(announcement.description) || 'No description provided', searchTerm)}</p>
+                    <p class="description"><strong>Summary:</strong> ${highlightText(escapeHtml(announcement.summary) || 'No summary provided', searchTerm)}</p>
                     ${announcement.target_audience ? `<p class="date" style="margin-top: 10px;">👥 ${highlightText(escapeHtml(announcement.target_audience), searchTerm)}</p>` : ''}
                     <div class="posted-by">
                         <img src="${escapeHtml(userAvatar)}" 
-                                alt="${escapeHtml(userName)}" 
-                                onerror="this.src='https://cdn-icons-png.flaticon.com/512/847/847969.png'">
+                             alt="${escapeHtml(userName)}" 
+                             onerror="this.src='https://cdn-icons-png.flaticon.com/512/847/847969.png'">
                         <span>Posted by <strong>${highlightText(escapeHtml(userName), searchTerm)}</strong></span>
                     </div>
                 </div>
                 <div class="card-footer">
                     <span class="category">${highlightText(escapeHtml(announcement.category), searchTerm)}</span>
+                    <button class="btn-read-more" onclick="event.stopPropagation(); openViewModal(${announcement.id})">Read More</button>
                 </div>
             </div>
         `;
@@ -1622,6 +1678,39 @@ function searchAnnouncements(preservePage = false) {
         document.getElementById('editModal').classList.remove('active');
     }
 
+    // ============================================
+    // NEW VIEW MODAL FUNCTIONS
+    // ============================================
+    function openViewModal(id) {
+        const announcement = allAnnouncements.find(a => a.id === id);
+        if (!announcement) {
+            console.error('Could not find announcement to view:', id);
+            return;
+        }
+        
+        // Get search term for highlighting
+        const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
+        
+        document.getElementById('viewModalTitle').innerHTML = highlightText(escapeHtml(announcement.title), searchTerm);
+        
+        const modalBody = document.getElementById('viewModalBody');
+        // Use .replace(/\n/g, '<br>') to preserve line breaks in the description
+        modalBody.innerHTML = `
+          <p class="date"><strong>Date posted:</strong> ${formatDate(announcement.created_at)}</p>
+            <p class="date"><strong>Date scheduled:</strong> ${formatDate(announcement.scheduled_date)}</p>
+            <p class="date"><strong>Why:</strong> ${highlightText(escapeHtml(announcement.why) || 'N/A', searchTerm)}</p>
+            <p class="date"><strong>Location:</strong> ${highlightText(escapeHtml(announcement.location) || 'N/A', searchTerm)}</p>
+            <p class="description"><strong>Full Content:</strong> ${highlightText(escapeHtml(announcement.description).replace(/\n/g, '<br>') || 'No description provided', searchTerm)}</p>
+        `;
+        
+        document.getElementById('viewModal').classList.add('active');
+    }
+
+    function closeViewModal() {
+        document.getElementById('viewModal').classList.remove('active');
+    }
+
+
     document.getElementById('editForm').addEventListener('submit', async function(e) {
         e.preventDefault();
         
@@ -1708,10 +1797,14 @@ function searchAnnouncements(preservePage = false) {
         if (!dateString) return 'No date specified';
         const options = { year: 'numeric', month: 'long', day: 'numeric' };
         try {
-            // Add time to fix potential timezone bugs
-            return new Date(dateString + 'T00:00:00').toLocaleDateString(undefined, options);
+            // new Date() can handle both '2025-11-08' and '2025-11-08T10:30:00+00:00'
+            const date = new Date(dateString);
+            if (isNaN(date)) {
+                return 'Invalid Date';
+            }
+            return date.toLocaleDateString(undefined, options);
         } catch (e) {
-            return dateString;
+            return 'Invalid Date';
         }
     }
 
@@ -1741,6 +1834,10 @@ function searchAnnouncements(preservePage = false) {
             }
             if (document.getElementById('editProfileModal').classList.contains('active')) {
                 closeEditProfileModal();
+            }
+            // NEW: Close view modal on Esc
+            if (document.getElementById('viewModal').classList.contains('active')) {
+                closeViewModal();
             }
         }
         // Keyboard shortcut for search

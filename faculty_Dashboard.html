@@ -1211,18 +1211,13 @@
     // PROFILE MODAL FUNCTIONS
     // ============================================
     function openEditProfileModal() {
-        if (!currentUserProfile) return;
-        document.getElementById('editFullName').value = currentUserProfile.full_name || '';
-        document.getElementById('editEmail').value = currentUserProfile.email || '';
-        document.getElementById('editUserType').value = currentUserProfile.user_type || '';
-        document.getElementById('editAvatarFile').value = '';
-        document.getElementById('avatarPreview').src = currentUserProfile.avatar_url || 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
-        document.getElementById('editProfileModal').classList.add('active');
-        document.getElementById('profile-dropdown-content').classList.remove('show');
+        // Redirect to face detection profile page
+        window.location.href = 'profile_facedetection.html';
     }
 
     function closeEditProfileModal() {
-        document.getElementById('editProfileModal').classList.remove('active');
+        // No longer needed but kept for compatibility
+        document.getElementById('editProfileModal')?.classList.remove('active');
     }
 
     // ============================================

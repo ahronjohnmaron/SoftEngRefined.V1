@@ -84,8 +84,18 @@
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div class="space-y-6">
         <div class="rounded-lg p-6 card-shadow" style="background-color: #2d2d2d;">
-          <label for="imageInput" class="block font-semibold mb-3 text-lg" style="color: #7ed321;">Upload Image</label>
+          <label for="imageInput" class="block font-semibold mb-3 text-lg" style="color: #7ed321;">Upload or Capture Image</label>
           <input type="file" id="imageInput" accept="image/*" class="mb-4 w-full text-sm rounded border px-3 py-2 text-white input-shadow" style="background-color: #1a1a1a; border-color: #3d3d3d;">
+          
+          <div class="flex gap-3 mb-4">
+            <button id="captureBtn" class="flex-1 px-4 py-3 rounded font-bold transition-all hover:opacity-90" style="background-color: #3d3d3d; color: #ffffff;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="inline-block mr-2 mb-1" viewBox="0 0 16 16">
+                <path d="M15 12a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h1.172a3 3 0 0 0 2.12-.879l.83-.828A1 1 0 0 1 6.827 3h2.344a1 1 0 0 1 .707.293l.828.828A3 3 0 0 0 12.828 5H14a1 1 0 0 1 1 1v6zM2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2z"/>
+                <path d="M8 11a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5zm0 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 6.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0z"/>
+              </svg>
+              Capture Photo
+            </button>
+          </div>
           
           <div class="flex gap-3">
             <button id="extractText" class="flex-1 px-4 py-3 rounded font-bold disabled:opacity-50 transition-all hover:opacity-90" style="background-color: #7ed321; color: #1a1a1a; box-shadow: 0 4px 12px rgba(126, 211, 33, 0.3);" disabled>Extract Text</button>
@@ -181,6 +191,26 @@
     </div>
   </div>
 
+  <div id="cameraModal" class="crop-modal">
+    <div class="crop-modal-content card-shadow">
+      <h2 class="text-2xl font-bold mb-4" style="color: #7ed321;">Capture Announcement Photo</h2>
+      <div class="mb-4 relative">
+        <video id="cameraVideo" autoplay playsinline class="rounded w-full mx-auto" style="border: 2px solid #7ed321; max-height: 60vh; background: #000;"></video>
+        <canvas id="cameraCanvas" class="hidden"></canvas>
+      </div>
+      <div class="flex gap-3 justify-end">
+        <button id="cancelCameraBtn" class="px-6 py-3 rounded font-semibold transition-all hover:opacity-90" style="background-color: #3d3d3d; color: #ffffff;">Cancel</button>
+        <button id="capturePhotoBtn" class="px-6 py-3 rounded font-semibold transition-all hover:opacity-90" style="background-color: #7ed321; color: #1a1a1a; box-shadow: 0 4px 12px rgba(126, 211, 33, 0.3);">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="inline-block mr-2 mb-1" viewBox="0 0 16 16">
+            <path d="M10.5 8.5a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z"/>
+            <path d="M2 4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2h-1.172a2 2 0 0 1-1.414-.586l-.828-.828A2 2 0 0 0 9.172 2H6.828a2 2 0 0 0-1.414.586l-.828.828A2 2 0 0 1 3.172 4H2zm.5 2a.5.5 0 1 1 0-1 .5.5 0 0 1 0 1zm9 2.5a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0z"/>
+          </svg>
+          Take Photo
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="cropModal" class="crop-modal">
     <div class="crop-modal-content card-shadow">
       <h2 class="text-2xl font-bold mb-4" style="color: #7ed321;">Crop Your Image</h2>
@@ -217,6 +247,7 @@
     let cropper = null;
     let currentImageBlob = null;
     let currentUserProfile = null;
+    let cameraStream = null;
 
     // =============================================================================
     // DOM ELEMENTS
@@ -230,6 +261,14 @@
     const progressBar = document.getElementById('progressBar');
     const progressText = document.getElementById('progressText');
     const statusMsg = document.getElementById('statusMsg');
+    
+    // Camera elements
+    const captureBtn = document.getElementById('captureBtn');
+    const cameraModal = document.getElementById('cameraModal');
+    const cameraVideo = document.getElementById('cameraVideo');
+    const cameraCanvas = document.getElementById('cameraCanvas');
+    const capturePhotoBtn = document.getElementById('capturePhotoBtn');
+    const cancelCameraBtn = document.getElementById('cancelCameraBtn');
     
     const announcementForm = document.getElementById('announcementForm');
     const fieldTitle = document.getElementById('fieldTitle');
@@ -467,6 +506,98 @@
         });
       }
     });
+
+    // =============================================================================
+    // CAMERA CAPTURE FUNCTIONALITY
+    // =============================================================================
+    
+    captureBtn.addEventListener('click', async () => {
+      try {
+        cameraModal.style.display = 'flex';
+        
+        const constraints = {
+          video: {
+            facingMode: 'environment',
+            width: { ideal: 1920 },
+            height: { ideal: 1080 }
+          }
+        };
+        
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        cameraVideo.srcObject = cameraStream;
+        
+        console.log('✅ Camera started successfully');
+      } catch (error) {
+        console.error('❌ Camera access error:', error);
+        cameraModal.style.display = 'none';
+        
+        if (error.name === 'NotAllowedError') {
+          showStatus('Camera access denied. Please allow camera permissions.', 'error');
+        } else if (error.name === 'NotFoundError') {
+          showStatus('No camera found on this device.', 'error');
+        } else {
+          showStatus('Failed to access camera: ' + error.message, 'error');
+        }
+      }
+    });
+
+    capturePhotoBtn.addEventListener('click', () => {
+      if (!cameraStream) {
+        showStatus('Camera not ready. Please try again.', 'error');
+        return;
+      }
+      
+      const video = cameraVideo;
+      const canvas = cameraCanvas;
+      
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      canvas.toBlob(blob => {
+        stopCamera();
+        cameraModal.style.display = 'none';
+        
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          cropImage.src = e.target.result;
+          document.getElementById('cropModal').style.display = 'flex';
+          
+          if (cropper) cropper.destroy();
+          cropper = new Cropper(cropImage, {
+            viewMode: 1,
+            autoCropArea: 1,
+            movable: true,
+            zoomable: true,
+            rotatable: true,
+            scalable: true,
+            background: false,
+            minCropBoxWidth: 100,
+            minCropBoxHeight: 100,
+          });
+          
+          extractTextBtn.disabled = true;
+          showStatus('✓ Photo captured. Crop the announcement area.', 'success');
+        };
+        reader.readAsDataURL(blob);
+      }, 'image/jpeg', 0.95);
+    });
+
+    cancelCameraBtn.addEventListener('click', () => {
+      stopCamera();
+      cameraModal.style.display = 'none';
+    });
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+        cameraVideo.srcObject = null;
+        console.log('✅ Camera stopped');
+      }
+    }
 
     // =============================================================================
     // OCR TEXT EXTRACTION WITH ERROR HANDLING
@@ -884,3 +1015,4 @@ Emergency (urgent/cancelled) > Deadline (due/submit) > Memo (directive/policy) >
   </script>
 </body>
 </html>
+

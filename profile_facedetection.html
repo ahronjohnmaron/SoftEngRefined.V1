@@ -401,7 +401,7 @@
       const loggedInUser = localStorage.getItem('loggedInUser');
       if (!loggedInUser) {
         alert('Please log in to edit your profile');
-        window.location.href = 'SoftEng/faculty_login.html';
+        window.location.href = 'faculty_login.html';
         return null;
       }
       try {
@@ -409,7 +409,7 @@
       } catch (error) {
         console.error('Invalid session data:', error);
         alert('Invalid session. Please log in again.');
-        window.location.href = 'SoftEng/faculty_login.html';
+        window.location.href = 'faculty_login.html';
         return null;
       }
     }
@@ -784,8 +784,8 @@
         // Show success alert on successful update
         alert('✅ Profile updated successfully!');
         
-        // Redirect to 'SoftEng/faculty_Dashboard.html' after successful save
-        window.location.href = 'SoftEng/faculty_Dashboard.html';
+        // Redirect to 'faculty_Dashboard.html' after successful save
+        window.location.href = 'faculty_Dashboard.html';
         
       } catch (error) {
         // Add comprehensive error handling with user-friendly messages for different failure scenarios

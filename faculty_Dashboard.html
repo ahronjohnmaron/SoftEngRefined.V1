@@ -1824,30 +1824,52 @@ function searchAnnouncements(preservePage = false) {
     // REALTIME SUBSCRIPTION (Replaces setInterval)
     // ============================================
     function subscribeToChanges() {
-        console.log('📡 Subscribing to realtime changes...');
+        console.log('📡 Subscribing to realtime changes for dashboard...');
         
+        // Create one channel to listen for all public changes
         const channel = supabaseClient
-            .channel('public:announcements')
+            .channel('public-dashboard-changes')
+
+            // --- Listener 1: Watch the 'announcements' table ---
             .on(
                 'postgres_changes',
                 { event: '*', schema: 'public', table: 'announcements' },
                 (payload) => {
-                    console.log('🔔 Realtime change received!', payload);
+                    console.log('🔔 Realtime change received for [announcements]!');
                     // Reload announcements, preserving the user's current page
                     loadAnnouncements(currentCategory, true);
                 }
             )
+
+            // --- Listener 2: Watch the 'members' table (for profile updates) ---
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'members' },
+                (payload) => {
+                    console.log('🔔 Realtime change received for [members]!');
+                    
+                    // Check if the change affects the *currently logged-in* user
+                    if (payload.new && payload.new.id === currentUserProfile.id) {
+                        console.log('Current user profile updated, reloading profile...');
+                        loadUserProfile(); // This reloads the name/avatar in the header
+                    }
+                    
+                    // Also, always reload announcements in case a *poster's* info changed
+                    console.log("Reloading posts to show any updated user names/avatars...");
+                    loadAnnouncements(currentCategory, true);
+                }
+            )
+
+            // --- Subscribe to the channel ---
             .subscribe((status, err) => {
-                 if (status === 'SUBSCRIBED') {
-                    console.log('✅ Successfully subscribed to realtime!');
+                if (status === 'SUBSCRIBED') {
+                    console.log('✅ Successfully subscribed to realtime dashboard updates!');
                 }
                 if (err) {
                     console.error('❌ Realtime subscription error:', err);
                 }
             });
     }
-
-    // ============================================
 
     // ============================================
     // KEYDOWN LISTENERS (for Esc key)

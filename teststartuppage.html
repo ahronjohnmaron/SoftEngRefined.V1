@@ -30,16 +30,134 @@
             box-sizing: border-box;
         }
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #FFFFFF;
-            color: #333;
+        /* ============================================
+           CSS VARIABLES FOR THEME SYSTEM
+           ============================================
+           This section defines all color and styling variables
+           for both light and dark themes. All colors throughout
+           the page reference these variables for consistent theming.
+           ============================================ */
+        
+        /* Light Theme (Default) */
+        :root {
+            /* Background Colors - Main page surfaces */
+            --bg-primary: #FFFFFF;        /* Main page background */
+            --bg-secondary: #F5F5F5;      /* Secondary sections (about cards, forms) */
+            --bg-card: #FFFFFF;           /* Feature cards and dev cards */
+            --bg-feature: #F5F5F5;        /* Features section background */
+            --bg-header: #FFFFFF;         /* Navigation header */
+            --bg-footer: #333333;         /* Footer background */
+            
+            /* Text Colors - Typography hierarchy */
+            --text-primary: #333333;      /* Main headings and body text */
+            --text-secondary: #666666;    /* Subheadings and descriptions */
+            --text-muted: #999999;        /* Less important text */
+            --text-footer: #FFFFFF;       /* Footer primary text */
+            --text-footer-secondary: #CCCCCC; /* Footer secondary text */
+            
+            /* Border & Shadow - Depth and separation */
+            --border-color: #E0E0E0;      /* Borders for inputs, buttons, cards */
+            --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);   /* Small shadow for header */
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.05);   /* Medium shadow for cards */
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.1);    /* Large shadow for hero image */
+            --shadow-card-hover: 0 8px 30px rgba(159, 232, 112, 0.2); /* Card hover effect */
+            
+            /* Accent Colors - Brand identity */
+            --accent-green: #9FE870;      /* Primary brand green */
+            --accent-green-hover: #8AD95E; /* Hover state for green elements */
+            --accent-shadow: rgba(159, 232, 112, 0.3);     /* Green shadow for buttons */
+            --accent-shadow-hover: rgba(159, 232, 112, 0.4); /* Hover shadow for buttons */
+            --accent-dark-green: #2A5500; /* Dark green for headings in light theme */
+            
+            /* Button Colors - Interactive elements */
+            --btn-primary-bg: linear-gradient(135deg, #9FE870 0%, #8AD95E 100%);
+            --btn-primary-text: #000000;
+            --btn-primary-shadow: rgba(159, 232, 112, 0.3);
+            --btn-primary-shadow-hover: rgba(159, 232, 112, 0.4);
+            --btn-secondary-bg: #FFFFFF;
+            --btn-secondary-text: #333333;
+            --btn-secondary-border: #E0E0E0;
+            --btn-secondary-hover-border: #9FE870;
+            --btn-secondary-hover-text: #9FE870;
+            
+            /* Link Colors - Navigation and text links */
+            --link-color: #666666;        /* Default link color */
+            --link-hover-color: #9FE870;  /* Link hover state */
+            
+            /* Transition - Smooth theme switching */
+            --theme-transition: all 0.3s ease; /* Applied to body for smooth color transitions */
         }
 
-        /* Header/Navigation */
+        /* Dark Theme - Applied when body has 'dark-theme' class */
+        body.dark-theme {
+            /* Background Colors - Dark surfaces with proper contrast */
+            --bg-primary: #1a1a1a;        /* Main dark background */
+            --bg-secondary: #2a2a2a;      /* Slightly lighter for sections */
+            --bg-card: #242424;           /* Card backgrounds */
+            --bg-feature: #2a2a2a;        /* Features section */
+            --bg-header: #242424;         /* Dark header */
+            --bg-footer: #1a1a1a;         /* Dark footer */
+            
+            /* Text Colors - Light text on dark backgrounds */
+            --text-primary: #e0e0e0;      /* High contrast for readability */
+            --text-secondary: #b0b0b0;    /* Medium contrast for descriptions */
+            --text-muted: #808080;        /* Low contrast for less important text */
+            --text-footer: #e0e0e0;       /* Footer text */
+            --text-footer-secondary: #b0b0b0; /* Footer secondary text */
+            
+            /* Border & Shadow - Adjusted for dark theme */
+            --border-color: #404040;      /* Lighter borders for visibility */
+            --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.3);   /* Deeper shadows */
+            --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
+            --shadow-card-hover: 0 8px 30px rgba(159, 232, 112, 0.3); /* Green glow on hover */
+            
+            /* Accent Colors - Brand green remains vibrant in dark theme */
+            --accent-green: #9FE870;      /* Same brand green for consistency */
+            --accent-green-hover: #8AD95E;
+            --accent-shadow: rgba(159, 232, 112, 0.4);     /* Stronger glow in dark */
+            --accent-shadow-hover: rgba(159, 232, 112, 0.5);
+            --accent-dark-green: #9FE870; /* Use bright green instead of dark in dark theme */
+            
+            /* Button Colors - Maintain brand identity in dark theme */
+            --btn-primary-bg: linear-gradient(135deg, #9FE870 0%, #8AD95E 100%);
+            --btn-primary-text: #000000;  /* Black text on green for contrast */
+            --btn-primary-shadow: rgba(159, 232, 112, 0.4);
+            --btn-primary-shadow-hover: rgba(159, 232, 112, 0.5);
+            --btn-secondary-bg: #242424;  /* Dark button background */
+            --btn-secondary-text: #e0e0e0;
+            --btn-secondary-border: #404040;
+            --btn-secondary-hover-border: #9FE870;
+            --btn-secondary-hover-text: #9FE870;
+            
+            /* Link Colors - Adjusted for dark backgrounds */
+            --link-color: #b0b0b0;        /* Lighter default links */
+            --link-hover-color: #9FE870;  /* Brand green on hover */
+        }
+
+        /* ============================================
+           BODY - GLOBAL THEME APPLICATION
+           ============================================
+           Applies theme colors and smooth transitions to entire page.
+           The transition property enables smooth color changes when
+           switching between light and dark themes.
+           ============================================ */
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-primary);  /* Theme-aware background */
+            color: var(--text-primary);           /* Theme-aware text color */
+            transition: var(--theme-transition);  /* Smooth theme switching (300ms) */
+        }
+
+        /* ============================================
+           HEADER/NAVIGATION - THEME-AWARE STYLES
+           ============================================
+           Navigation header uses CSS variables for colors,
+           ensuring it adapts to both light and dark themes.
+           ============================================ */
         header {
-            background-color: #FFFFFF;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            background-color: var(--bg-header);   /* Theme-aware header background */
+            box-shadow: var(--shadow-sm);         /* Theme-aware shadow */
             position: sticky;
             top: 0;
             z-index: 100;
@@ -60,12 +178,12 @@
             gap: 0.75rem;
             font-size: 1.5rem;
             font-weight: 800;
-            color: #333;
+            color: var(--text-primary);
             text-decoration: none;
         }
 
         .logo i {
-            color: #9FE870;
+            color: var(--accent-green);
             font-size: 2rem;
         }
 
@@ -76,30 +194,109 @@
         }
 
         .nav-links a {
-            color: #666;
+            color: var(--link-color);
             text-decoration: none;
             font-weight: 500;
             transition: color 0.3s;
         }
 
         .nav-links a:hover {
-            color: #9FE870;
+            color: var(--link-hover-color);
         }
 
         .login-btn {
-            background: linear-gradient(135deg, #9FE870 0%, #8AD95E 100%);
-            color: #000;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
             padding: 0.75rem 2rem;
             border-radius: 12px;
             font-weight: 700;
             text-decoration: none;
             transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(159, 232, 112, 0.3);
+            box-shadow: 0 4px 12px var(--btn-primary-shadow);
         }
 
         .login-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(159, 232, 112, 0.4);
+            box-shadow: 0 8px 20px var(--btn-primary-shadow-hover);
+        }
+
+        /* ============================================
+           THEME TOGGLE BUTTON STYLES
+           ============================================
+           Circular button in navigation header that allows users
+           to switch between light and dark themes.
+           
+           Features:
+           - Circular design with icon (moon/sun)
+           - Smooth hover and active state animations
+           - Keyboard accessible with focus states
+           - Fallback text icons if Font Awesome fails
+           
+           Requirements: 1.2, 5.1, 5.2, 5.3, 5.4, 5.5
+           ============================================ */
+        
+        .theme-toggle-btn {
+            background: none;                    /* Transparent background */
+            border: 2px solid var(--border-color); /* Themed border */
+            color: var(--text-primary);          /* Themed icon color */
+            width: 40px;                         /* Fixed circular size */
+            height: 40px;
+            border-radius: 50%;                  /* Perfect circle */
+            display: flex;                       /* Center icon */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;                     /* Indicate clickability */
+            transition: all 0.3s ease;          /* Smooth state transitions */
+            font-size: 1.1rem;                  /* Icon size */
+        }
+
+        /* Hover state - Visual feedback on mouse over */
+        .theme-toggle-btn:hover {
+            background-color: var(--bg-secondary); /* Subtle background */
+            border-color: var(--accent-green);     /* Brand color highlight */
+            color: var(--accent-green);            /* Icon turns green */
+            transform: rotate(20deg);              /* Playful rotation effect */
+        }
+
+        /* Active state - Feedback when clicking */
+        .theme-toggle-btn:active {
+            transform: scale(0.95) rotate(20deg); /* Slight press-down effect */
+        }
+
+        /* Focus state - Keyboard navigation accessibility */
+        .theme-toggle-btn:focus {
+            outline: none;                         /* Remove default outline */
+            border-color: var(--accent-green);     /* Green border */
+            box-shadow: 0 0 0 3px var(--accent-shadow); /* Focus ring */
+        }
+
+        /* Icon transition for smooth animation */
+        .theme-toggle-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        /* ============================================
+           FONT AWESOME FALLBACK SYSTEM
+           ============================================
+           Provides text-based icons (☀ ☾) if Font Awesome
+           CDN fails to load, ensuring button remains functional.
+           ============================================ */
+        
+        /* Hide fallback text by default (Font Awesome icons shown) */
+        .theme-toggle-btn .icon-fallback {
+            display: none;
+            font-size: 1.2rem;
+            font-style: normal;
+        }
+
+        /* Show fallback text when Font Awesome fails */
+        .theme-toggle-btn.no-fa .icon-fallback {
+            display: inline;
+        }
+
+        /* Hide Font Awesome icon when using fallback */
+        .theme-toggle-btn.no-fa i {
+            display: none;
         }
 
         /* Hero Section */
@@ -116,29 +313,29 @@
         .hero-content h1 {
             font-size: 3rem;
             font-weight: 800;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 1.5rem;
             line-height: 1.2;
         }
 
         .hero-content h1 span {
-            color: #9FE870;
+            color: var(--accent-green);
         }
 
         .hero-content p {
             font-size: 1.125rem;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 2rem;
             line-height: 1.6;
         }
 
         .nav-container p {
-            background: linear-gradient(135deg, #9FE870 0%, #7acc50 100%);
+            background: linear-gradient(135deg, var(--accent-green) 0%, var(--accent-green-hover) 100%);
             color: #000000;
             padding: 6px 12px;
             border-radius: 10px;
             margin-left: 4px;
-            box-shadow: 0 4px 12px rgba(159, 232, 112, 0.3);
+            box-shadow: 0 4px 12px var(--accent-shadow);
             font-weight: 700;
         }
 
@@ -149,27 +346,27 @@
         }
 
         .btn-primary {
-            background: linear-gradient(135deg, #9FE870 0%, #8AD95E 100%);
-            color: #000;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
             padding: 1rem 2.5rem;
             border-radius: 12px;
             font-weight: 700;
             text-decoration: none;
             transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(159, 232, 112, 0.3);
+            box-shadow: 0 4px 12px var(--btn-primary-shadow);
             display: inline-block;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(159, 232, 112, 0.4);
+            box-shadow: 0 8px 20px var(--btn-primary-shadow-hover);
         }
 
         .btn-secondary {
-            background: #FFFFFF;
-            color: #333;
+            background: var(--btn-secondary-bg);
+            color: var(--btn-secondary-text);
             padding: 1rem 2.5rem;
-            border: 2px solid #E0E0E0;
+            border: 2px solid var(--btn-secondary-border);
             border-radius: 12px;
             font-weight: 700;
             text-decoration: none;
@@ -178,8 +375,8 @@
         }
 
         .btn-secondary:hover {
-            border-color: #9FE870;
-            color: #9FE870;
+            border-color: var(--btn-secondary-hover-border);
+            color: var(--btn-secondary-hover-text);
         }
 
         .hero-image {
@@ -189,12 +386,12 @@
         .hero-image img {
             width: 100%;
             border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            box-shadow: var(--shadow-lg);
         }
 
         /* Features Section */
         .features {
-            background-color: #F5F5F5;
+            background-color: var(--bg-feature);
             padding: 5rem 2rem;
         }
 
@@ -207,14 +404,14 @@
             text-align: center;
             font-size: 2.5rem;
             font-weight: 800;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
 
         .section-subtitle {
             text-align: center;
             font-size: 1.125rem;
-            color: #666;
+            color: var(--text-secondary);
             margin-bottom: 3rem;
             max-width: 800px;
             margin-left: auto;
@@ -228,22 +425,22 @@
         }
 
         .feature-card {
-            background: #FFFFFF;
+            background: var(--bg-card);
             padding: 2.5rem;
             border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            box-shadow: var(--shadow-md);
             transition: all 0.3s;
         }
 
         .feature-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(159, 232, 112, 0.2);
+            box-shadow: var(--shadow-card-hover);
         }
 
         .feature-icon {
             width: 70px;
             height: 70px;
-            background: linear-gradient(135deg, #9FE870 0%, #8AD95E 100%);
+            background: var(--btn-primary-bg);
             border-radius: 16px;
             display: flex;
             align-items: center;
@@ -259,18 +456,18 @@
         .feature-card h3 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
 
         .feature-card p {
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.6;
         }
 
         /* About Section */
         .about {
-            background-color: #FFFFFF;
+            background-color: var(--bg-primary);
             padding: 5rem 2rem;
         }
 
@@ -291,21 +488,21 @@
         }
 
         .about-card {
-            background: #F5F5F5;
+            background: var(--bg-secondary);
             padding: 2rem;
             border-radius: 16px;
-            border-left: 4px solid #9FE870;
+            border-left: 4px solid var(--accent-green);
         }
 
         .about-card h3 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #2A5500;
+            color: var(--accent-dark-green);
             margin-bottom: 1rem;
         }
 
         .about-card p {
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.7;
         }
 
@@ -319,7 +516,7 @@
         .mission-vision h3 {
             font-size: 1.75rem;
             font-weight: 700;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 1.5rem;
             text-align: center;
         }
@@ -337,19 +534,19 @@
 
         .mv-item i {
             font-size: 3rem;
-            color: #9FE870;
+            color: var(--accent-green);
             margin-bottom: 1rem;
         }
 
         .mv-item h4 {
             font-size: 1.25rem;
             font-weight: 700;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 0.75rem;
         }
 
         .mv-item p {
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.6;
         }
 
@@ -361,7 +558,7 @@
         .dev-team h3 {
             font-size: 2rem;
             font-weight: 700;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 2rem;
             text-align: center;
         }
@@ -374,17 +571,17 @@
         }
 
         .dev-card {
-            background: #FFFFFF;
+            background: var(--bg-card);
             padding: 2.5rem;
             border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            box-shadow: var(--shadow-md);
             text-align: center;
             transition: all 0.3s;
         }
 
         .dev-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(159, 232, 112, 0.3);
+            box-shadow: var(--shadow-card-hover);
         }
 
         
@@ -392,32 +589,32 @@
         .dev-avatar img {
             width: 120px;
             height: 120px;
-            background: linear-gradient(135deg, #9FE870 0%, #8AD95E 100%);
+            background: var(--btn-primary-bg);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 1.5rem;
             font-size: 3rem;
-            color: #000;
+            color: var(--btn-primary-text);
         }
 
         .dev-card h4 {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
         }
 
         .dev-card .role {
-            color: #9FE870;
+            color: var(--accent-green);
             font-weight: 600;
             margin-bottom: 1rem;
             font-size: 1.1rem;
         }
 
         .dev-card p {
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.6;
             font-size: 0.95rem;
         }
@@ -438,14 +635,14 @@
         .page-content h2 {
             font-size: 2.5rem;
             font-weight: 800;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 1rem;
         }
 
         .page-content h3 {
             font-size: 1.75rem;
             font-weight: 700;
-            color: #2A5500;
+            color: var(--accent-dark-green);
             margin-top: 2.5rem;
             margin-bottom: 1rem;
         }
@@ -453,19 +650,19 @@
         .page-content h4 {
             font-size: 1.25rem;
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary);
             margin-top: 1.5rem;
             margin-bottom: 0.75rem;
         }
 
         .page-content p {
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.8;
             margin-bottom: 1.5rem;
         }
 
         .page-content ul, .page-content ol {
-            color: #666;
+            color: var(--text-secondary);
             line-height: 1.8;
             margin-bottom: 1.5rem;
             padding-left: 2rem;
@@ -476,15 +673,15 @@
         }
 
         .doc-card {
-            background: #F5F5F5;
+            background: var(--bg-secondary);
             padding: 2rem;
             border-radius: 12px;
             margin-bottom: 2rem;
-            border-left: 4px solid #9FE870;
+            border-left: 4px solid var(--accent-green);
         }
 
         .contact-form {
-            background: #F5F5F5;
+            background: var(--bg-secondary);
             padding: 2.5rem;
             border-radius: 16px;
             margin-top: 2rem;
@@ -497,7 +694,7 @@
         .form-group label {
             display: block;
             font-weight: 600;
-            color: #333;
+            color: var(--text-primary);
             margin-bottom: 0.5rem;
         }
 
@@ -505,7 +702,7 @@
         .form-group textarea {
             width: 100%;
             padding: 0.875rem;
-            border: 2px solid #E0E0E0;
+            border: 2px solid var(--border-color);
             border-radius: 8px;
             font-family: 'Poppins', sans-serif;
             font-size: 1rem;
@@ -515,7 +712,7 @@
         .form-group input:focus,
         .form-group textarea:focus {
             outline: none;
-            border-color: #9FE870;
+            border-color: var(--accent-green);
         }
 
         .form-group textarea {
@@ -524,8 +721,8 @@
         }
 
         .submit-btn {
-            background: linear-gradient(135deg, #9FE870 0%, #8AD95E 100%);
-            color: #000;
+            background: var(--btn-primary-bg);
+            color: var(--btn-primary-text);
             padding: 1rem 2.5rem;
             border: none;
             border-radius: 12px;
@@ -533,18 +730,18 @@
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.3s;
-            box-shadow: 0 4px 12px rgba(159, 232, 112, 0.3);
+            box-shadow: 0 4px 12px var(--btn-primary-shadow);
         }
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(159, 232, 112, 0.4);
+            box-shadow: 0 8px 20px var(--btn-primary-shadow-hover);
         }
 
         /* Footer */
         footer {
-            background-color: #333;
-            color: #FFFFFF;
+            background-color: var(--bg-footer);
+            color: var(--text-footer);
             padding: 3rem 2rem;
         }
 
@@ -560,28 +757,28 @@
             font-size: 1.25rem;
             font-weight: 700;
             margin-bottom: 1rem;
-            color: #9FE870;
+            color: var(--accent-green);
         }
 
         .footer-section p,
         .footer-section a {
-            color: #CCCCCC;
+            color: var(--text-footer-secondary);
             text-decoration: none;
             line-height: 1.8;
             display: block;
         }
 
         .footer-section a:hover {
-            color: #9FE870;
+            color: var(--link-hover-color);
         }
 
         .footer-bottom {
             max-width: 1200px;
             margin: 2rem auto 0;
             padding-top: 2rem;
-            border-top: 1px solid #555;
+            border-top: 1px solid var(--border-color);
             text-align: center;
-            color: #999;
+            color: var(--text-muted);
         }
 
         /* Mobile Menu */
@@ -590,7 +787,7 @@
             background: none;
             border: none;
             font-size: 1.5rem;
-            color: #333;
+            color: var(--text-primary);
             cursor: pointer;
         }
 
@@ -613,6 +810,11 @@
                 display: block;
             }
 
+            /* Theme toggle button in mobile menu */
+            .nav-links .theme-toggle-btn {
+                margin: 0.5rem 0;
+                align-self: flex-start;
+            }
 
             .about-grid {
                 grid-template-columns: 1fr;
@@ -632,7 +834,6 @@
                 font-size: 2rem;
             }
 
-
             .hero-buttons {
                 flex-direction: column;
             }
@@ -645,6 +846,13 @@
 
             .mission-vision {
                 padding: 2rem;
+            }
+
+            /* Ensure theme toggle is visible on small screens */
+            .theme-toggle-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
             }
         }
     </style>
@@ -661,6 +869,10 @@
                 <a href="#features" onclick="showHome(); return false;">Features</a>
                 <a href="#about" onclick="showHome(); return false;">About</a>
                 <a href="#contact" onclick="showHome(); return false;">Contact</a>
+                <button id="theme-toggle" class="theme-toggle-btn" aria-label="Toggle dark mode">
+                    <i class="fas fa-moon" id="theme-icon"></i>
+                    <span class="icon-fallback" id="theme-icon-fallback">☾</span>
+                </button>
                 <a href="notify_Me.html" class="login-btn">NotifyMe!</a>
             </div>
             <button class="mobile-menu-btn">
@@ -680,7 +892,7 @@
                 </p>
                 <div class="hero-buttons">
                     <a href="faculty_login.html" class="btn-primary">Faculty Log in</a>
-                    <a href="#features" class="btn-secondary">Learn More</a>
+                    <a href="student_dashboard.html" class="btn-secondary">Student</a>
                 </div>
             </div>
             <div class="hero-image">
@@ -896,12 +1108,12 @@
         <div class="doc-card">
             <h3>Security Features</h3>
             <h4>OTP Authentication</h4>
-            <p>All admin access is protected by One-Time Password authentication:</p>
+            <p>All members and admin access is protected by One-Time Password authentication:</p>
             <ul>
                 <li>OTP codes are valid for 10 minutes</li>
                 <li>Codes are sent to your registered email</li>
-                <li>Maximum 3 login attempts before temporary lockout</li>
-                <li>Sessions expire after 24 hours of inactivity</li>
+                <li>Maximum 5 login attempts before temporary lockout</li>
+                <li>Sessions expire after 5 minutes of inactivity</li>
             </ul>
 
             <h4>Data Protection</h4>
@@ -944,7 +1156,7 @@
             </ul>
         </div>
 
-        <p style="margin-top: 3rem;"><strong>Need more help?</strong> Contact our support team at <a href="#" onclick="showContactPage(); return false;" style="color: #9FE870; text-decoration: underline;">campusannouncement54321@gmail.com</a></p>
+        <p style="margin-top: 3rem;"><strong>Need more help?</strong> Contact our support team at <a href="#" onclick="showContactPage(); return false;" style="color: var(--link-hover-color); text-decoration: underline;">campusannouncement54321@gmail.com</a></p>
     </div>
 
     <!-- Help Center Page -->
@@ -1031,8 +1243,8 @@
             <h3>Getting More Help</h3>
             <p>If you can't find the answer to your question:</p>
             <ul>
-                <li>Check our <a href="#" onclick="showDocPage(); return false;" style="color: #9FE870; text-decoration: underline;">Documentation</a> for detailed guides</li>
-                <li><a href="#" onclick="showContactPage(); return false;" style="color: #9FE870; text-decoration: underline;">Contact our support team</a> for personalized assistance</li>
+                <li>Check our <a href="#" onclick="showDocPage(); return false;" style="color: var(--link-hover-color); text-decoration: underline;">Documentation</a> for detailed guides</li>
+                <li><a href="#" onclick="showContactPage(); return false;" style="color: var(--link-hover-color); text-decoration: underline;">Contact our support team</a> for personalized assistance</li>
                 <li>Email us at campusannouncement54321@gmail.com</li>
                 <li>Call +63 (125) 933-5023 for urgent issues</li>
             </ul>
@@ -1463,7 +1675,17 @@
     </footer>
 
     <script>
-        // Page Navigation Functions
+        /* ============================================
+           PAGE NAVIGATION FUNCTIONS
+           ============================================
+           Single-page application navigation system that shows/hides
+           different content sections without page reloads.
+           ============================================ */
+        
+        /**
+         * Hide all page sections
+         * Helper function to hide all content sections before showing a new one
+         */
         function hideAllPages() {
             document.getElementById('main-content').style.display = 'none';
             document.getElementById('documentation-page').classList.remove('active');
@@ -1473,46 +1695,77 @@
             document.getElementById('terms-page').classList.remove('active');
         }
 
+        /**
+         * Show home page (main landing page content)
+         */
         function showHome() {
             hideAllPages();
             document.getElementById('main-content').style.display = 'block';
             window.scrollTo(0, 0);
         }
 
+        /**
+         * Show documentation page
+         */
         function showDocPage() {
             hideAllPages();
             document.getElementById('documentation-page').classList.add('active');
             window.scrollTo(0, 0);
         }
 
+        /**
+         * Show help center page
+         */
         function showHelpPage() {
             hideAllPages();
             document.getElementById('help-page').classList.add('active');
             window.scrollTo(0, 0);
         }
 
+        /**
+         * Show contact us page
+         */
         function showContactPage() {
             hideAllPages();
             document.getElementById('contact-page').classList.add('active');
             window.scrollTo(0, 0);
         }
 
+        /**
+         * Show privacy policy page
+         */
         function showPrivacyPage() {
             hideAllPages();
             document.getElementById('privacy-page').classList.add('active');
             window.scrollTo(0, 0);
         }
 
+        /**
+         * Show terms of service page
+         */
         function showTermsPage() {
             hideAllPages();
             document.getElementById('terms-page').classList.add('active');
             window.scrollTo(0, 0);
         }
 
-        // Contact Form Handler
+        /* ============================================
+           CONTACT FORM HANDLER
+           ============================================
+           Processes contact form submissions
+           ============================================ */
+        
+        /**
+         * Handle contact form submission
+         * Prevents default form submission and processes data
+         * 
+         * @param {Event} event - Form submit event
+         */
         function handleContactForm(event) {
             event.preventDefault();
             const form = event.target;
+            
+            // Collect form data
             const formData = {
                 name: form.name.value,
                 email: form.email.value,
@@ -1521,15 +1774,21 @@
                 message: form.message.value
             };
             
-            // Here you would typically send this data to your backend
+            // TODO: Send data to backend API
+            // For now, just show confirmation message
             alert('Thank you for your message! We will get back to you within 24 hours.');
             form.reset();
         }
 
-        // Smooth scrolling for anchor links
+        /* ============================================
+           SMOOTH SCROLLING FOR ANCHOR LINKS
+           ============================================
+           Enables smooth scrolling when clicking navigation links
+           ============================================ */
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 const href = this.getAttribute('href');
+                // Only handle actual anchor links (not just "#")
                 if (href.startsWith('#') && href.length > 1) {
                     e.preventDefault();
                     const target = document.querySelector(href);
@@ -1543,27 +1802,44 @@
             });
         });
 
-        // Mobile menu toggle
+        /* ============================================
+           MOBILE MENU SYSTEM
+           ============================================
+           Handles responsive navigation menu for mobile devices.
+           Uses theme-aware CSS variables for styling.
+           ============================================ */
+        
         const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
         const navLinks = document.querySelector('.nav-links');
         
+        /**
+         * Toggle mobile menu open/closed
+         * Applies theme-aware styles dynamically
+         */
         mobileMenuBtn.addEventListener('click', function() {
             if (navLinks.style.display === 'flex') {
+                // Close menu
                 navLinks.style.display = 'none';
             } else {
+                // Open menu with theme-aware styling
                 navLinks.style.display = 'flex';
                 navLinks.style.flexDirection = 'column';
                 navLinks.style.position = 'absolute';
                 navLinks.style.top = '100%';
                 navLinks.style.left = '0';
                 navLinks.style.right = '0';
-                navLinks.style.backgroundColor = '#FFFFFF';
+                // Use CSS variable for background (theme-aware)
+                navLinks.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-header').trim();
                 navLinks.style.padding = '2rem';
-                navLinks.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+                // Use CSS variable for shadow (theme-aware)
+                navLinks.style.boxShadow = getComputedStyle(document.documentElement).getPropertyValue('--shadow-md').trim();
             }
         });
 
-        // Close mobile menu when clicking outside
+        /**
+         * Close mobile menu when clicking outside
+         * Improves UX by auto-closing menu
+         */
         document.addEventListener('click', function(event) {
             const isClickInside = event.target.closest('nav');
             if (!isClickInside && window.innerWidth <= 968) {
@@ -1571,19 +1847,200 @@
             }
         });
 
-        // Handle window resize
+        /**
+         * Handle window resize
+         * Ensures menu displays correctly when switching between mobile/desktop
+         */
         window.addEventListener('resize', function() {
             if (window.innerWidth > 968) {
+                // Desktop view - show menu inline
                 navLinks.style.display = 'flex';
                 navLinks.style.flexDirection = 'row';
                 navLinks.style.position = 'static';
                 navLinks.style.padding = '0';
                 navLinks.style.boxShadow = 'none';
             } else {
+                // Mobile view - hide menu by default
                 navLinks.style.display = 'none';
+            }
+        });
+
+        /* ============================================
+           THEME CONTROLLER - DARK/LIGHT MODE SYSTEM
+           ============================================
+           This section handles the dark/light theme toggle functionality.
+           
+           Key Features:
+           - Persists user preference in localStorage
+           - Smooth transitions between themes using CSS variables
+           - Graceful fallback if localStorage is unavailable
+           - Icon updates to reflect current theme state
+           - Font Awesome fallback for icon loading failures
+           
+           Requirements Addressed:
+           - Req 1.1: Theme toggle within 300ms
+           - Req 2.1, 2.2: Theme persistence in localStorage
+           - Req 1.5: Dynamic icon updates
+           ============================================ */
+        
+        /**
+         * Initialize theme on page load
+         * 
+         * Checks localStorage for saved theme preference and applies it.
+         * If no preference exists, defaults to light theme.
+         * Includes error handling for browsers with localStorage disabled.
+         * 
+         * @function initTheme
+         * @returns {void}
+         */
+        function initTheme() {
+            try {
+                // Retrieve saved theme preference from localStorage
+                const savedTheme = localStorage.getItem('theme');
+                
+                if (savedTheme === 'dark') {
+                    // Apply dark theme by adding class to body
+                    document.body.classList.add('dark-theme');
+                    updateThemeIcon('dark');
+                } else {
+                    // Default to light theme (no class needed)
+                    updateThemeIcon('light');
+                }
+            } catch (error) {
+                // Handle localStorage errors (private browsing, disabled storage, etc.)
+                console.error('Error loading theme preference:', error);
+                // Gracefully degrade - default to light theme without persistence
+                updateThemeIcon('light');
+            }
+        }
+
+        /**
+         * Toggle between light and dark themes
+         * 
+         * Toggles the 'dark-theme' class on body element, which triggers
+         * CSS variable changes for smooth theme transition. Saves preference
+         * to localStorage for persistence across sessions.
+         * 
+         * @function toggleTheme
+         * @returns {void}
+         */
+        function toggleTheme() {
+            // Toggle dark-theme class and get current state
+            const isDark = document.body.classList.toggle('dark-theme');
+            const theme = isDark ? 'dark' : 'light';
+            
+            try {
+                // Persist theme preference to localStorage
+                localStorage.setItem('theme', theme);
+            } catch (error) {
+                // Handle localStorage errors gracefully
+                console.error('Error saving theme preference:', error);
+                // Continue without persistence if localStorage is unavailable
+                // Theme will still work for current session
+            }
+            
+            // Update toggle button icon to reflect new theme
+            updateThemeIcon(theme);
+        }
+
+        /**
+         * Update theme toggle button icon
+         * 
+         * Changes the icon to reflect the current theme state:
+         * - Light theme: Shows moon icon (clicking will switch to dark)
+         * - Dark theme: Shows sun icon (clicking will switch to light)
+         * 
+         * Also updates fallback text icon in case Font Awesome fails to load.
+         * 
+         * @function updateThemeIcon
+         * @param {string} theme - Current theme ('light' or 'dark')
+         * @returns {void}
+         */
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('theme-icon');
+            const fallbackIcon = document.getElementById('theme-icon-fallback');
+            
+            // Update Font Awesome icon classes
+            if (icon) {
+                if (theme === 'dark') {
+                    // Dark theme active: show sun icon (to switch back to light)
+                    icon.classList.remove('fa-moon');
+                    icon.classList.add('fa-sun');
+                } else {
+                    // Light theme active: show moon icon (to switch to dark)
+                    icon.classList.remove('fa-sun');
+                    icon.classList.add('fa-moon');
+                }
+            }
+            
+            // Update fallback text icon (used if Font Awesome fails to load)
+            if (fallbackIcon) {
+                fallbackIcon.textContent = theme === 'dark' ? '☀' : '☾';
+            }
+        }
+
+        /**
+         * Check if Font Awesome icons loaded successfully
+         * 
+         * Verifies that Font Awesome CSS is loaded and icons are rendering.
+         * If Font Awesome fails to load, enables text-based fallback icons
+         * to ensure the theme toggle remains functional.
+         * 
+         * Uses a 1-second delay to allow Font Awesome time to load before
+         * falling back to text icons.
+         * 
+         * @function checkFontAwesomeLoaded
+         * @returns {void}
+         */
+        function checkFontAwesomeLoaded() {
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const icon = document.getElementById('theme-icon');
+            
+            // Exit if elements don't exist
+            if (!icon || !themeToggleBtn) return;
+            
+            // Check if Font Awesome is loaded by inspecting computed font-family
+            const computedStyle = window.getComputedStyle(icon, ':before');
+            const fontFamily = computedStyle.getPropertyValue('font-family');
+            
+            // If Font Awesome isn't detected immediately, wait and recheck
+            if (!fontFamily || !fontFamily.includes('Font Awesome')) {
+                // Give Font Awesome 1 second to load from CDN
+                setTimeout(function() {
+                    const recheckStyle = window.getComputedStyle(icon, ':before');
+                    const recheckFont = recheckStyle.getPropertyValue('font-family');
+                    
+                    // If still not loaded, enable text fallback
+                    if (!recheckFont || !recheckFont.includes('Font Awesome')) {
+                        console.warn('Font Awesome icons failed to load, using text fallback');
+                        // Add class to show text icons instead
+                        themeToggleBtn.classList.add('no-fa');
+                    }
+                }, 1000);
+            }
+        }
+
+        /**
+         * Initialize theme system on page load
+         * 
+         * Sets up event listeners and initializes theme state when DOM is ready.
+         * This ensures all elements exist before attempting to manipulate them.
+         */
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize theme from localStorage or default to light
+            initTheme();
+            
+            // Check if Font Awesome loaded successfully
+            checkFontAwesomeLoaded();
+            
+            // Attach click handler to theme toggle button
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', toggleTheme);
             }
         });
     </script>
 </body>
 </html>
+
 

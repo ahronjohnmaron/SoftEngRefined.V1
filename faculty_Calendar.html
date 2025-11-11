@@ -542,7 +542,7 @@
             }
 
             // ============================================
-            // UPDATED: LOAD BY POSTED DATE (created_at)
+            // *** CHANGED: Loading by posted_at ***
             // ============================================
             async loadAnnouncementsFromSupabase() {
                 try {
@@ -568,9 +568,9 @@
                                 avatar_url
                             )
                         `)
-                        .gte('created_at', startDate) // Filter by POSTED date
-                        .lte('created_at', endDate)   // Filter by POSTED date
-                        .order('created_at', { ascending: true });
+                        .gte('posted_at', startDate) // Filter by POSTED date
+                        .lte('posted_at', endDate)   // Filter by POSTED date
+                        .order('posted_at', { ascending: true }); // Order by POSTED date
 
                     if (error) throw error;
 
@@ -578,8 +578,8 @@
                     this.announcementDetails = {};
                     
                     data.forEach(row => {
-                        // Use created_at (posted date) as the key
-                        const dateKey = row.created_at.substring(0, 10); 
+                        // Use posted_at (posted date) as the key
+                        const dateKey = row.posted_at.substring(0, 10); 
                         if (!this.announcements[dateKey]) {
                             this.announcements[dateKey] = [];
                             this.announcementDetails[dateKey] = [];
@@ -678,7 +678,7 @@
                 dateNumber.textContent = date.getDate();
                 dateEl.appendChild(dateNumber);
 
-                // Use the correct key format (from created_at)
+                // Use the correct key format (from posted_at)
                 const dateKey = this.formatDateKey(date); 
                 let todaysAnnouncements = this.announcements[dateKey] || [];
 
@@ -734,7 +734,7 @@
             }
 
             // ============================================
-            // RENDER MODAL LIST (UPDATED FOR 2-STEP MODAL)
+            // *** RENDER MODAL LIST (MODIFIED) ***
             // ============================================
             renderModalList() {
                 const listEl = document.getElementById('modal-announcement-list');
@@ -773,6 +773,22 @@
                         </div>
                     ` : '';
                     
+                    // --- ADDED: Poster information ---
+                    const posterName = this.escapeHtml(announcement.members?.full_name || 'Unknown');
+                    const posterAvatar = this.escapeHtml(announcement.members?.avatar_url) || 'https://via.placeholder.com/40'; // Default avatar
+                    
+                    const posterHTML = `
+                        <div class="flex items-center gap-2 mt-3">
+                            <img src="${posterAvatar}" alt="${posterName}" class="w-8 h-8 rounded-full object-cover border border-wise-green">
+                            <span class="text-wise-light-gray text-sm font-medium">Posted by: ${posterName}</span>
+                        </div>
+                    `;
+
+                    // --- ADDED: Summary information ---
+                    const summaryHTML = `
+                        <p class="text-gray-300 text-sm mt-2 line-clamp-3">${this.escapeHtml(announcement.summary) || 'No summary provided.'}</p>
+                    `;
+                    
                     // Main content of the list item
                     li.innerHTML = `
                         <div class="flex items-start justify-between gap-2 mb-2">
@@ -781,11 +797,13 @@
                         </div>
                         ${metaHTML}
                         
+                        ${posterHTML}
+                        ${summaryHTML}
                         <div class="mt-4 pt-4 border-t border-wise-border">
                              <button class="view-item-btn w-full bg-wise-dark text-wise-green border border-wise-green hover:bg-wise-green hover:text-black font-semibold py-2 px-4 rounded-lg transition-all duration-300 flex items-center justify-center gap-2" data-id="${announcement.id}">
-                                <i class="fas fa-eye"></i>
-                                View Details
-                            </button>
+                                 <i class="fas fa-eye"></i>
+                                 View Details
+                             </button>
                         </div>
                     `;
                     listEl.appendChild(li);
@@ -800,6 +818,9 @@
                 document.getElementById('add-announcement-form').reset();
             }
             
+            // ============================================
+            // *** CHANGED: addAnnouncement() ***
+            // ============================================
             async addAnnouncement() {
                 const title = document.getElementById('announcement-title').value.trim();
                 const description = document.getElementById('announcement-description').value.trim();
@@ -815,15 +836,15 @@
                     return;
                 }
 
-                // --- UPDATED: Manually set created_at key for calendar placement ---
+                // --- CHANGED: Added posted_at ---
                 const newAnnouncementData_temp = {
                     title: title,
                     description: description || null,
-                    scheduled_date: this.selectedDateKey, // Keep scheduled date as is
+                    scheduled_date: this.selectedDateKey,
+                    posted_at: this.selectedDateKey, // Set posted_at to the selected date
                     category: category,
                     target_audience: targetAudience || null,
                     posted_by_user_id: this.currentUserProfile.id,
-                    // We will get the real created_at from Supabase response
                 };
 
                 try {
@@ -843,8 +864,8 @@
                         }
                     };
                     
-                    // --- UPDATED: Use the new created_at date for the key ---
-                    const newDateKey = newAnnouncementData.created_at.substring(0, 10);
+                    // --- CHANGED: Use posted_at for the new key ---
+                    const newDateKey = newAnnouncementData.posted_at.substring(0, 10);
 
                     if (!this.announcements[newDateKey]) {
                         this.announcements[newDateKey] = [];
@@ -962,7 +983,7 @@
             }
             
             // ============================================
-            // NEW: VIEW MODAL FUNCTIONS
+            // *** CHANGED: openViewModal() ***
             // ============================================
 
             openViewModal(id) {
@@ -994,10 +1015,10 @@
                             <i class="fas fa-file-export w-6 text-center text-wise-green mr-3 pt-1 flex-shrink-0"></i>
                             <div class="text-white">
                                 <strong class="font-semibold text-wise-light-gray">Date posted:</strong>
-                                ${this.formatDate(announcement.created_at)}
+                                ${this.formatDate(announcement.posted_at)}
                             </div>
                         </div>
-                
+            
                         <div class="flex items-start">
                             <i class="fas fa-calendar-check w-6 text-center text-wise-green mr-3 pt-1 flex-shrink-0"></i>
                             <div class="text-white">
@@ -1005,7 +1026,7 @@
                                 ${this.formatDate(announcement.scheduled_date)}
                             </div>
                         </div>
-                
+            
                         <div class="flex items-start">
                             <i class="fas fa-question-circle w-6 text-center text-wise-green mr-3 pt-1 flex-shrink-0"></i>
                             <div class="text-white">
@@ -1013,7 +1034,7 @@
                                 ${this.escapeHtml(announcement.why) || 'N/A'}
                             </div>
                         </div>
-                
+            
                         <div class="flex items-start">
                             <i class="fas fa-map-marker-alt w-6 text-center text-wise-green mr-3 pt-1 flex-shrink-0"></i>
                             <div class="text-white">
@@ -1021,7 +1042,7 @@
                                 ${this.escapeHtml(announcement.location) || 'N/A'}
                             </div>
                         </div>
-                
+            
                         <div class="flex items-start pt-4 border-t border-wise-border">
                             <i class="fas fa-align-left w-6 text-center text-wise-green mr-3 pt-1 flex-shrink-0"></i>
                             <div class="text-white">
@@ -1047,6 +1068,9 @@
             // END VIEW MODAL FUNCTIONS
             // ============================================
 
+            // ============================================
+            // *** CHANGED: handleEditSubmit() ***
+            // ============================================
             async handleEditSubmit() {
                 const id = document.getElementById('edit-announcement-id').value;
                 const updateData = {
@@ -1071,8 +1095,8 @@
 
                     if (error) throw error;
                     
-                    // --- UPDATED: Find and update the item in the correct dateKey bucket ---
-                    const dateKey = data.created_at.substring(0, 10);
+                    // --- CHANGED: Use posted_at for the date key ---
+                    const dateKey = data.posted_at.substring(0, 10);
                     
                     if (this.announcementDetails[dateKey]) {
                         const index = this.announcementDetails[dateKey].findIndex(item => item.id == id);

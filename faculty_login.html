@@ -174,12 +174,12 @@
     </div>
 
     <script>
-        const supabaseUrl = 'https://dqtictujkhxultwoaqaw.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdGljdHVqa2h4dWx0d29hcWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTU1MjksImV4cCI6MjA3Mzg3MTUyOX0.DsnJZ9ylCBlTeVp_KdgRq71cV0f7MojOfuWg1MVGS5I';
-const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseUrl = 'https://dqtictujkhxultwoaqaw.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdGljdHVqa2h4dWx0d29hcWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTU1MjksImV4cCI6MjA3Mzg3MTUyOX0.DsnJZ9ylCBlTeVp_KdgRq71cV0f7MojOfuWg1MVGS5I';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
     // --- EmailJS Config ---
-    const EMAILJS_SERVICE_ID = 'service_zylncvg';     // <-- PASTE KEY HERE
-    const EMAILJS_TEMPLATE_ID = 'template_lib4f21'; // <-- PASTE KEY HERE
+    const EMAILJS_SERVICE_ID = 'service_zylncvg';
+    const EMAILJS_TEMPLATE_ID = 'template_lib4f21';
 
     // --- Original Elements ---
     const loginForm = document.getElementById('loginForm');
@@ -209,7 +209,7 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
     const LOCKOUT_TIME = 15 * 60 * 1000;
     let awaitingOtp = false;
 
-    // --- OTP Functions ---
+    // --- OTP Functions (Unchanged) ---
     function generateOTP() {
         return Math.floor(100000 + Math.random() * 900000).toString();
     }
@@ -333,9 +333,9 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
         let preference = false;
 
         try {
-            // --- BUG FIX 2: Changed 'admins' to 'admin_user' ---
+            // --- Using 'admins' as requested ---
             let { data: admin, error: adminError } = await supabaseClient
-                .from('admins') // <-- CORRECTED
+                .from('admins') // <-- Using 'admins'
                 .select('remember_me_preference')
                 .eq('email', email)
                 .maybeSingle();
@@ -384,7 +384,7 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
         try {
             if (awaitingOtp) {
-                // --- STATE 2: VERIFYING OTP ---
+                // --- STATE 2: VERIFYING OTP (Unchanged) ---
                 const enteredOtp = otpInput.value;
                 const storedData = sessionStorage.getItem('otpVerificationData');
                 
@@ -399,13 +399,14 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
                     messageArea.classList.remove('text-red-500');
                     messageArea.classList.add('text-ph-orange');
 
+                    // The userData here *already* has the avatar_url from STATE 1
                     setLoginSession(userData, rememberMe);
                     sessionStorage.removeItem('otpVerificationData');
                     
                     console.log(`✅ ${userType} login successful:`, userData.email);
                     
-                    // --- BUG FIX 2: Changed 'admins' to 'admin_user' ---
-                    const tableName = (userType === 'Admin') ? 'admins' : 'members'; // <-- CORRECTED
+                    // --- Using 'admins' as requested ---
+                    const tableName = (userType === 'Admin') ? 'admins' : 'members'; // <-- Using 'admins'
                     supabaseClient
                         .from(tableName)
                         .update({ remember_me_preference: rememberMe })
@@ -434,7 +435,6 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
                 const password = passwordInput.value;
                 const rememberMe = rememberMeCheckbox.checked;
 
-                // --- BUG FIX 1: Uncommented this line ---
                 const recaptchaResponse = grecaptcha.getResponse(); 
                 
                 if (!recaptchaResponse) {
@@ -444,9 +444,9 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
                     return; 
                 }
 
-                // --- BUG FIX 2: Changed 'admins' to 'admin_user' ---
+                // --- Using 'admins' as requested ---
                 const { data: adminData } = await supabaseClient
-                    .from('admins') // <-- CORRECTED
+                    .from('admins') // <-- Using 'admins'
                     .select('*')
                     .eq('email', email)
                     .eq('password', password)
@@ -458,9 +458,11 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
                 let userName = null;
 
                 if (adminData) {
+                    // --- 🌟 FIX #1: Added avatar_url for admin ---
                     userData = {
                         id: adminData.id,
                         email: adminData.email,
+                        avatar_url: adminData.avatar_url, // <-- ADDED
                         userType: 'admin',
                         loginTime: new Date().toISOString()
                     };
@@ -476,11 +478,13 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
                         .maybeSingle();
                     
                     if (memberData) {
+                        // --- 🌟 FIX #2: Added avatar_url for member/faculty ---
                         userData = {
                             id: memberData.id,
                             email: memberData.email,
                             full_name: memberData.full_name,
                             user_type: memberData.user_type,
+                            avatar_url: memberData.avatar_url, // <-- ADDED
                             userType: 'member',
                             created_at: memberData.created_at,
                             loginTime: new Date().toISOString()
@@ -498,7 +502,7 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
                     sessionStorage.setItem('otpVerificationData', JSON.stringify({
                         otp: otp,
-                        userData: userData,
+                        userData: userData, // This object NOW contains the avatar_url
                         userType: userType,
                         redirectPage: redirectPage,
                         rememberMe: rememberMe
@@ -558,16 +562,17 @@ const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
             otpWrapper.classList.add('hidden');
         } finally {
             if (!checkLockout() || awaitingOtp) {
-                 submitButton.disabled = false;
-                 submitButton.classList.remove('opacity-70', 'cursor-not-allowed');
-                 if (!awaitingOtp) {
+                submitButton.disabled = false;
+                submitButton.classList.remove('opacity-70', 'cursor-not-allowed');
+                if (!awaitingOtp) {
                     submitButton.textContent = 'Login';
-                 }
+                }
             }
         }
     });
-    </script>
+</script>
 
 </body>
 </html>
+
 

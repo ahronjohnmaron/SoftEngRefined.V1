@@ -309,11 +309,35 @@
     .crop-btn.cancel:hover {
       background: #4d4d4d;
     }
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #3d3d3d;
+      color: #ffffff;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      padding: 10px 20px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.18s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      z-index: 1002;
+    }
+    .back-btn:hover {
+      background: #4d4d4d;
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
+  <button class="back-btn" onclick="window.location.href='faculty_Dashboard.html'">
+    ← Back to Dashboard
+  </button>
   <div id="editProfileModal" class="ep-modal">
     <form id="editProfileForm" class="ep-form" autocomplete="off">
       <h2>Edit Profile</h2>

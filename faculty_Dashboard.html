@@ -1564,7 +1564,7 @@ function displayAnnouncements(announcements, searchTerm = '') {
                 <div class="card-header">
                     ${cardHeaderIcons} </div>
                 <div class="card-content">
-                    <p class="date"><strong>Date posted:</strong> ${formatDate(announcement.created_at)}</p>
+                    <p class="date"><strong>Date posted:</strong> ${formatDate(announcement.posted_at)}</p>
                     <p class="date"><strong>Date scheduled:</strong> ${formatDate(announcement.scheduled_date)}</p>
                     <h3 class="title">${highlightText(escapeHtml(announcement.title), searchTerm)}</h3>
                     <p class="description"><strong>Summary:</strong> ${highlightText(escapeHtml(announcement.summary) || 'No summary provided', searchTerm)}</p>
@@ -1898,4 +1898,5 @@ function searchAnnouncements(preservePage = false) {
     </script>
 </body>
 </html>
+
 

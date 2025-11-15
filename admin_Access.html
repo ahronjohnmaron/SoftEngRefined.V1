@@ -2229,9 +2229,27 @@
         }
 
         // Logout
-        function logout() {
+        async function logout() {
             if (confirm('Are you sure you want to logout?')) {
-                window.location.href = 'teststartuppage.html';
+                try {
+                    // Sign out from Supabase
+                    await supabase.auth.signOut();
+                    
+                    // Clear all localStorage data
+                    localStorage.clear();
+                    
+                    // Clear all sessionStorage data
+                    sessionStorage.clear();
+                    
+                    // Redirect to startup page
+                    window.location.href = 'teststartuppage.html';
+                } catch (error) {
+                    console.error('Error during logout:', error);
+                    // Still redirect even if there's an error
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = 'teststartuppage.html';
+                }
             }
         }
         

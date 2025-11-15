@@ -278,45 +278,21 @@
         }
     }
 
-    // --- Session Functions (Unchanged) ---
-    function setLoginSession(userData, rememberMe) {
-        if (rememberMe) {
-            const now = new Date();
-            const expiryTime = now.getTime() + 7 * 24 * 60 * 60 * 1000; // 7 days
-            const sessionData = { 
-                user: userData, 
-                expiry: expiryTime 
-            };
-            localStorage.setItem('loggedInUser', JSON.stringify(sessionData));
-            sessionStorage.removeItem('loggedInUser');
-        } else {
-            localStorage.removeItem('loggedInUser');
-            sessionStorage.setItem('loggedInUser', JSON.stringify(userData)); 
-        }
+    // --- 🌟 FIXED: Session Functions ---
+    // This now matches your "working" code's logic.
+    // It ALWAYS stores the flat user object in localStorage.
+    function setLoginSession(userData) {
+        localStorage.setItem('loggedInUser', JSON.stringify(userData));
+        sessionStorage.removeItem('loggedInUser'); // Clear session storage just in case
     }
 
+    // This now matches your "working" code's logic.
+    // It ONLY checks localStorage for a flat user object.
     function checkExistingSession() {
-        let sessionData = null;
-        let userData = null;
-
-        const sessionUser = sessionStorage.getItem('loggedInUser');
-        if (sessionUser) {
-            userData = JSON.parse(sessionUser);
-        } else {
-            const persistentUser = localStorage.getItem('loggedInUser');
-            if (persistentUser) {
-                sessionData = JSON.parse(persistentUser);
-                const now = new Date().getTime();
-
-                if (sessionData.expiry && now < sessionData.expiry) {
-                    userData = sessionData.user;
-                } else {
-                    localStorage.removeItem('loggedInUser');
-                }
-            }
-        }
-
-        if (userData) {
+        const loggedInUser = localStorage.getItem('loggedInUser');
+        if (loggedInUser) {
+            const userData = JSON.parse(loggedInUser);
+            // Redirect based on stored user type
             if (userData.userType === 'admin') {
                 window.location.href = ADMIN_PAGE;
             } else {
@@ -326,6 +302,7 @@
     }
 
     // --- Remember Me Preference Function ---
+    // (This was correct, still using 'admins' table as requested)
     async function fetchRememberMePreference() {
         const email = emailInput.value.trim();
         if (!email) return;
@@ -333,9 +310,8 @@
         let preference = false;
 
         try {
-            // --- Using 'admins' as requested ---
             let { data: admin, error: adminError } = await supabaseClient
-                .from('admins') // <-- Using 'admins'
+                .from('admins') // Using 'admins'
                 .select('remember_me_preference')
                 .eq('email', email)
                 .maybeSingle();
@@ -362,7 +338,7 @@
     }
 
     // --- Initialize ---
-    checkExistingSession();
+    checkExistingSession(); // Uses the new fixed function
     checkLockout();
     updateAttemptCounter();
 
@@ -382,9 +358,11 @@
         submitButton.textContent = 'Processing...';
         submitButton.classList.add('opacity-70', 'cursor-not-allowed');
 
+        const rememberMe = rememberMeCheckbox.checked; // We still need this value
+
         try {
             if (awaitingOtp) {
-                // --- STATE 2: VERIFYING OTP (Unchanged) ---
+                // --- STATE 2: VERIFYING OTP ---
                 const enteredOtp = otpInput.value;
                 const storedData = sessionStorage.getItem('otpVerificationData');
                 
@@ -392,24 +370,27 @@
                     throw new Error('Session expired. Please start over.');
                 }
 
-                const { otp, userData, userType, redirectPage, rememberMe } = JSON.parse(storedData);
+                // Get the data we stored temporarily
+                const { otp, userData, userType, redirectPage } = JSON.parse(storedData);
 
                 if (enteredOtp === otp) {
                     messageArea.textContent = '✓ OTP Verified! Logging in...';
                     messageArea.classList.remove('text-red-500');
                     messageArea.classList.add('text-ph-orange');
 
-                    // The userData here *already* has the avatar_url from STATE 1
-                    setLoginSession(userData, rememberMe);
+                    // --- 🌟 FIXED: Use the new session function ---
+                    // This saves the flat object to localStorage
+                    setLoginSession(userData); 
                     sessionStorage.removeItem('otpVerificationData');
                     
-                    console.log(`✅ ${userType} login successful:`, userData.email);
+                    // This log will now show the email correctly
+                    console.log(`✅ ${userType} login successful:`, userData.email); 
                     
-                    // --- Using 'admins' as requested ---
-                    const tableName = (userType === 'Admin') ? 'admins' : 'members'; // <-- Using 'admins'
+                    // We still update their "Remember Me" preference in the database
+                    const tableName = (userType === 'Admin') ? 'admins' : 'members';
                     supabaseClient
                         .from(tableName)
-                        .update({ remember_me_preference: rememberMe })
+                        .update({ remember_me_preference: rememberMe }) // 'rememberMe' is from the checkbox
                         .eq('id', userData.id)
                         .then(({ error }) => {
                             if (error) {
@@ -433,10 +414,8 @@
                 // --- STATE 1: VERIFYING PASSWORD ---
                 const email = emailInput.value.trim();
                 const password = passwordInput.value;
-                const rememberMe = rememberMeCheckbox.checked;
-
-                const recaptchaResponse = grecaptcha.getResponse(); 
                 
+                const recaptchaResponse = grecaptcha.getResponse(); 
                 if (!recaptchaResponse) {
                     messageArea.textContent = '✗ Please complete the reCAPTCHA verification';
                     messageArea.classList.add('text-red-500');
@@ -444,9 +423,9 @@
                     return; 
                 }
 
-                // --- Using 'admins' as requested ---
+                // Check 'admins' table
                 const { data: adminData } = await supabaseClient
-                    .from('admins') // <-- Using 'admins'
+                    .from('admins') // Using 'admins'
                     .select('*')
                     .eq('email', email)
                     .eq('password', password)
@@ -458,11 +437,11 @@
                 let userName = null;
 
                 if (adminData) {
-                    // --- 🌟 FIX #1: Added avatar_url for admin ---
+                    // This object includes the avatar_url and email fix
                     userData = {
                         id: adminData.id,
                         email: adminData.email,
-                        avatar_url: adminData.avatar_url, // <-- ADDED
+                        avatar_url: adminData.avatar_url,
                         userType: 'admin',
                         loginTime: new Date().toISOString()
                     };
@@ -470,6 +449,7 @@
                     redirectPage = ADMIN_PAGE;
                     userName = adminData.email; 
                 } else {
+                    // Check 'members' table
                     const { data: memberData } = await supabaseClient
                         .from('members')
                         .select('*')
@@ -478,13 +458,13 @@
                         .maybeSingle();
                     
                     if (memberData) {
-                        // --- 🌟 FIX #2: Added avatar_url for member/faculty ---
+                        // This object includes the avatar_url and email fix
                         userData = {
                             id: memberData.id,
                             email: memberData.email,
                             full_name: memberData.full_name,
                             user_type: memberData.user_type,
-                            avatar_url: memberData.avatar_url, // <-- ADDED
+                            avatar_url: memberData.avatar_url,
                             userType: 'member',
                             created_at: memberData.created_at,
                             loginTime: new Date().toISOString()
@@ -500,12 +480,13 @@
                     const otp = generateOTP();
                     console.log(`Generated OTP for ${email}: ${otp}`);
 
+                    // Store all data needed for STATE 2 in *sessionStorage*
                     sessionStorage.setItem('otpVerificationData', JSON.stringify({
                         otp: otp,
-                        userData: userData, // This object NOW contains the avatar_url
+                        userData: userData, // This full object has email + avatar
                         userType: userType,
-                        redirectPage: redirectPage,
-                        rememberMe: rememberMe
+                        redirectPage: redirectPage
+                        // We don't need to pass 'rememberMe' here anymore
                     }));
                     
                     const emailSent = await sendOtpEmail(email, userName, otp);
@@ -574,5 +555,6 @@
 
 </body>
 </html>
+
 
 

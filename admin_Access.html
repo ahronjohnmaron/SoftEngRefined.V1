@@ -825,6 +825,11 @@
                     <i class="fas fa-home w-5"></i>
                     <span class="font-semibold text-sm">Dashboard</span>
                 </button>
+                <button onclick="showSection('members_req')" data-table="members_req" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left">
+                    <i class="fas fa-user-clock w-5"></i>
+                    <span class="font-semibold text-sm">Member Requests</span>
+                    <span id="pendingBadge" class="ml-auto bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full hidden">0</span>
+                </button>
                 <button onclick="showSection('notifications')" data-table="notifications" class="nav-link w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left">
                     <i class="fas fa-bell w-5"></i>
                     <span class="font-semibold text-sm">NotifyMe!</span>
@@ -943,7 +948,7 @@
         // Load counts on page load
         async function loadCounts() {
             try {
-                const allTables = ['notifications', 'members', 'announcements', 'admins'];
+                const allTables = ['notifications', 'members', 'announcements', 'admins', 'members_req'];
                 const counts = {};
 
                 for (const table of allTables) {
@@ -960,6 +965,15 @@
                     if (!error) {
                         counts[table] = count || 0;
                     }
+                }
+
+                // Update pending badge
+                const pendingBadge = document.getElementById('pendingBadge');
+                if (pendingBadge && counts.members_req > 0) {
+                    pendingBadge.textContent = counts.members_req;
+                    pendingBadge.classList.remove('hidden');
+                } else if (pendingBadge) {
+                    pendingBadge.classList.add('hidden');
                 }
 
                 return counts;
@@ -1412,8 +1426,8 @@
                 } else {
                     // For other tables, show all columns except hidden ones
                     headers.forEach(key => {
-                        // MODIFIED: Hide archived, archived_at, and password for members/admins
-                        const shouldHidePassword = key.toLowerCase().includes('password') && (currentTable === 'members' || currentTable === 'admins');
+                        // MODIFIED: Hide archived, archived_at, and password for members/admins/members_req
+                        const shouldHidePassword = key.toLowerCase().includes('password') && (currentTable === 'members' || currentTable === 'admins' || currentTable === 'members_req');
                         if (key !== 'archived' && key !== 'archived_at' && !shouldHidePassword) {
                             const isIdCol = key === 'id';
                             tableHTML += `
@@ -1442,7 +1456,7 @@
                 if (currentTable === 'announcements') {
                     colCount = 5; // #, ID, TITLE, POSTED DATE, ACTIONS
                 } else {
-                    const shouldHidePassword = currentTable === 'members' || currentTable === 'admins';
+                    const shouldHidePassword = currentTable === 'members' || currentTable === 'admins' || currentTable === 'members_req';
                     const passwordCols = shouldHidePassword ? headers.filter(h => h.toLowerCase().includes('password')).length : 0;
                     colCount = headers.filter(h => h !== 'archived' && h !== 'archived_at').length - passwordCols + 2;
                 }
@@ -1481,8 +1495,8 @@
                         Object.entries(row).forEach(([key, value]) => {
                             if (key === 'archived' || key === 'archived_at') return;
 
-                            // Skip password column for members and admins tables
-                            if (key.toLowerCase().includes('password') && (currentTable === 'members' || currentTable === 'admins')) {
+                            // Skip password column for members, admins, and members_req tables
+                            if (key.toLowerCase().includes('password') && (currentTable === 'members' || currentTable === 'admins' || currentTable === 'members_req')) {
                                 return;
                             }
 
@@ -1525,8 +1539,19 @@
                             <div class="flex gap-2 justify-start">
                     `;
 
+                    // For members_req, add Approve/Reject buttons
+                    if (currentTable === 'members_req') {
+                        tableHTML += `
+                                <button onclick="approveMemberRequest(${row.id})" class="btn-action text-green-500 hover:text-green-600" title="Approve">
+                                    <i class="fas fa-check-circle"></i>
+                                </button>
+                                <button onclick="rejectMemberRequest(${row.id})" class="btn-action text-red-500 hover:text-red-600" title="Reject">
+                                    <i class="fas fa-times-circle"></i>
+                                </button>
+                        `;
+                    }
                     // For announcements, add View More button first
-                    if (currentTable === 'announcements') {
+                    else if (currentTable === 'announcements') {
                         const rowDataJson = JSON.stringify(row).replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                         tableHTML += `
                                 <button onclick='viewAnnouncementDetails(${JSON.stringify(row)})' class="btn-action text-blue-500 hover:text-blue-600" title="View More">
@@ -1544,7 +1569,7 @@
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                         `;
-                    } else {
+                    } else if (currentTable !== 'members_req') {
                         tableHTML += `
                                 <button onclick="openEditModal(${row.id})" class="btn-action hover:text-blue-600" style="color: #9FE870;" title="Edit">
                                     <i class="fas fa-edit"></i>
@@ -2314,6 +2339,89 @@
 
         themeToggle.addEventListener('click', toggleDarkMode);
         // --- End Dark Mode ---
+
+        // Approve member request
+        async function approveMemberRequest(requestId) {
+            if (!confirm('Approve this member request and create their account?')) return;
+
+            try {
+                // Get the request data
+                const { data: request, error: fetchError } = await supabase
+                    .from('members_req')
+                    .select('*')
+                    .eq('id', requestId)
+                    .single();
+
+                if (fetchError) throw fetchError;
+
+                // Create auth user with Supabase
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: request.email,
+                    password: request.password, // This is already hashed from signup
+                    options: {
+                        data: {
+                            full_name: request.full_name,
+                            user_type: request.user_type,
+                            avatar_url: request.avatar_url,
+                            remember_me: request.remember_me_preference
+                        }
+                    }
+                });
+
+                if (authError) throw authError;
+
+                // Insert into members table
+                const { error: insertError } = await supabase
+                    .from('members')
+                    .insert([{
+                        full_name: request.full_name,
+                        user_type: request.user_type,
+                        email: request.email,
+                        password: request.password,
+                        avatar_url: request.avatar_url,
+                        remember_me_preference: request.remember_me_preference,
+                        archived: false
+                    }]);
+
+                if (insertError) throw insertError;
+
+                // Delete the request
+                const { error: deleteError } = await supabase
+                    .from('members_req')
+                    .delete()
+                    .eq('id', requestId);
+
+                if (deleteError) throw deleteError;
+
+                alert('Member request approved successfully!');
+                await loadTableData();
+                await loadCounts(); // Update badge
+            } catch (error) {
+                console.error('Error approving request:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
+
+        // Reject member request
+        async function rejectMemberRequest(requestId) {
+            if (!confirm('Reject and delete this member request?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('members_req')
+                    .delete()
+                    .eq('id', requestId);
+
+                if (error) throw error;
+
+                alert('Member request rejected and deleted.');
+                await loadTableData();
+                await loadCounts(); // Update badge
+            } catch (error) {
+                console.error('Error rejecting request:', error);
+                alert(`Error: ${error.message}`);
+            }
+        }
 
         // Initialize
         window.addEventListener('DOMContentLoaded', async () => {

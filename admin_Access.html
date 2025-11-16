@@ -803,6 +803,76 @@
             color: #9FE870;
         }
 
+        /* Filter tag buttons */
+        .filter-section {
+            background-color: #F5F5F5;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .dark .filter-section {
+            background-color: #1E1E1E;
+            border: 1px solid #333;
+        }
+        .filter-group {
+            margin-bottom: 0.75rem;
+        }
+        .filter-group:last-child {
+            margin-bottom: 0;
+        }
+        .filter-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .dark .filter-label {
+            color: #AAAAAA;
+        }
+        .filter-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .filter-tag {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            background-color: #FFFFFF;
+            color: #666;
+            border: 1px solid #E0E0E0;
+        }
+        .filter-tag:hover {
+            background-color: #F9F9F9;
+            border-color: #9FE870;
+        }
+        .filter-tag.active {
+            background-color: #9FE870;
+            color: #000;
+            border-color: #9FE870;
+            font-weight: 600;
+        }
+        .dark .filter-tag {
+            background-color: #121212;
+            color: #AAAAAA;
+            border-color: #333;
+        }
+        .dark .filter-tag:hover {
+            background-color: #252525;
+            border-color: #9FE870;
+        }
+        .dark .filter-tag.active {
+            background-color: #9FE870;
+            color: #000;
+            border-color: #9FE870;
+        }
+
     </style>
 </head>
 <body class="bg-gray-100">
@@ -907,7 +977,16 @@
         let currentSort = { column: 'posted_at', ascending: false }; 
         let charts = {};
         let showingArchived = false; 
-        const archivableTables = ['members', 'announcements', 'notifications']; 
+        const archivableTables = ['members', 'announcements', 'notifications'];
+        let selectedMonth = 'all'; // For announcement month filter
+        let showFilters = false; // For filter visibility toggle
+        
+        // Announcement filter states
+        let announcementFilters = {
+            type: 'all', // memo, emergency, notices, deadline, all
+            uploadDate: 'all', // today, this_week, this_month, this_year, all
+            targetAudience: 'all' // faculty, students, all
+        }; 
 
         // Mobile menu toggle
         document.getElementById('menuToggle').addEventListener('click', () => {
@@ -1111,6 +1190,80 @@
             }
         }
 
+        // Get announcement category counts by target audience
+        async function getAnnouncementCategoryCounts(targetAudience = 'all') {
+            try {
+                let query = supabase
+                    .from('announcements')
+                    .select('category, target_audience')
+                    .eq('archived', false);
+                
+                // Filter by target audience if not 'all'
+                if (targetAudience !== 'all') {
+                    query = query.eq('target_audience', targetAudience);
+                }
+                
+                const { data, error } = await query;
+                
+                if (error) throw error;
+                
+                // Count by category
+                const categoryCounts = {
+                    'Memo': 0,
+                    'Emergency': 0,
+                    'Notices': 0,
+                    'Deadline': 0
+                };
+                
+                if (data) {
+                    data.forEach(announcement => {
+                        const category = announcement.category;
+                        if (categoryCounts.hasOwnProperty(category)) {
+                            categoryCounts[category]++;
+                        }
+                    });
+                }
+                
+                return categoryCounts;
+            } catch (error) {
+                console.error('Error fetching category counts:', error);
+                return { 'Memo': 0, 'Emergency': 0, 'Notices': 0, 'Deadline': 0 };
+            }
+        }
+
+        // Get announcement target audience counts
+        async function getAnnouncementAudienceCounts() {
+            try {
+                const { data, error } = await supabase
+                    .from('announcements')
+                    .select('target_audience')
+                    .eq('archived', false);
+                
+                if (error) throw error;
+                
+                // Count by target audience
+                const audienceCounts = {
+                    'faculty': 0,
+                    'students': 0,
+                    'all': 0
+                };
+                
+                if (data) {
+                    data.forEach(announcement => {
+                        const audience = announcement.target_audience;
+                        if (audienceCounts.hasOwnProperty(audience)) {
+                            audienceCounts[audience]++;
+                        }
+                    });
+                }
+                
+                return audienceCounts;
+            } catch (error) {
+                console.error('Error fetching audience counts:', error);
+                return { 'faculty': 0, 'students': 0, 'all': 0 };
+            }
+        }
+
         // Show Dashboard
         async function showDashboard() {
             document.getElementById('pageTitle').textContent = 'Dashboard';
@@ -1181,6 +1334,24 @@
                     </div>
                     <div class="chart-container">
                         <canvas id="announcementMetricsChart"></canvas>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                    <div class="info-card">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">
+                            <i class="fas fa-chart-bar mr-2" style="color: #9FE870;"></i> Announcement Categories
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="info-card">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">
+                            <i class="fas fa-users mr-2" style="color: #9FE870;"></i> Target Audience   
+                        </h3>
+                        <div class="chart-container">
+                            <canvas id="audienceChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 <div class="info-card">
@@ -1334,6 +1505,156 @@
                     }
                 });
             }
+
+            // Create Category Chart
+            const categoryCtx = document.getElementById('categoryChart');
+            if (categoryCtx) {
+                const categoryCounts = await getAnnouncementCategoryCounts('all');
+                const categoryData = Object.values(categoryCounts);
+                
+                charts.category = new Chart(categoryCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Memo', 'Emergency', 'Notices', 'Deadline'],
+                        datasets: [{
+                            label: 'Announcement Count',
+                            data: categoryData,
+                            backgroundColor: [
+                                'rgba(34, 211, 238, 0.8)', // Cyan for Memo
+                                'rgba(239, 68, 68, 0.8)',  // Red for Emergency
+                                'rgba(245, 158, 11, 0.8)', // Amber for Notices
+                                'rgba(139, 92, 246, 0.8)'  // Purple for Deadline
+                            ],
+                            borderColor: [
+                                '#22D3EE',
+                                '#EF4444',
+                                '#F59E0B',
+                                '#8B5CF6'
+                            ],
+                            borderWidth: 2,
+                            borderRadius: 8,
+                            barThickness: 80
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    color: document.documentElement.classList.contains('dark') ? '#AAAAAA' : '#666',
+                                    stepSize: 1
+                                },
+                                grid: {
+                                    color: document.documentElement.classList.contains('dark') ? '#333333' : '#E0E0E0'
+                                }
+                            },
+                            x: {
+                                ticks: {
+                                    color: document.documentElement.classList.contains('dark') ? '#AAAAAA' : '#666',
+                                    font: { size: 11, weight: '500' }
+                                },
+                                grid: {
+                                    color: document.documentElement.classList.contains('dark') ? '#333333' : '#E0E0E0'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : '#333',
+                                    padding: 15,
+                                    font: { size: 12, weight: '500' },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#FFFFFF',
+                                bodyColor: '#FFFFFF',
+                                borderColor: '#9FE870',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.dataset.label || '';
+                                        return `${label}: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Create Audience Chart
+            const audienceCtx = document.getElementById('audienceChart');
+            if (audienceCtx) {
+                const audienceCounts = await getAnnouncementAudienceCounts();
+                charts.audience = new Chart(audienceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Faculty', 'Students', 'All'],
+                        datasets: [{
+                            data: [
+                                audienceCounts.faculty,
+                                audienceCounts.students,
+                                audienceCounts.all
+                            ],
+                            backgroundColor: [
+                                '#3B82F6', // Blue for Faculty
+                                '#F59E0B', // Amber for Students
+                                '#10B981'  // Green for All
+                            ],
+                            borderColor: document.documentElement.classList.contains('dark') ? '#1E1E1E' : '#FFFFFF',
+                            borderWidth: 3,
+                            hoverOffset: 15
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: document.documentElement.classList.contains('dark') ? '#E0E0E0' : '#333',
+                                    padding: 15,
+                                    font: { size: 12, weight: '500' },
+                                    usePointStyle: true,
+                                    pointStyle: 'circle'
+                                }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#FFFFFF',
+                                bodyColor: '#FFFFFF',
+                                borderColor: '#9FE870',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.parsed || 0;
+                                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                        return `${label}: ${value} (${percentage}%)`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         // Show section
@@ -1343,7 +1664,9 @@
             showingArchived = false; 
             currentSearchTerm = ''; 
             document.getElementById('tableSearchInput').value = ''; 
-            currentSort = { column: 'posted_at', ascending: false }; 
+            currentSort = { column: 'posted_at', ascending: false };
+            selectedMonth = 'all'; // Reset month filter
+            resetAnnouncementFilters(); // Reset announcement filters 
 
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
             
@@ -1365,7 +1688,12 @@
                 await showDashboard();
             } else {
                 document.getElementById('tableSearchContainer').classList.remove('hidden');
-                document.getElementById('pageTitle').textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1).replace('_', ' ');
+                // Set custom title for announcements, default for others
+                if (tableName === 'announcements') {
+                    document.getElementById('pageTitle').textContent = 'Manage Announcement';
+                } else {
+                    document.getElementById('pageTitle').textContent = tableName.charAt(0).toUpperCase() + tableName.slice(1).replace('_', ' ');
+                }
                 await loadTableData();
             }
         }
@@ -1375,7 +1703,9 @@
             showingArchived = isChecked;
             currentPage = 1;
             currentSearchTerm = ''; 
-            document.getElementById('tableSearchInput').value = ''; 
+            document.getElementById('tableSearchInput').value = '';
+            selectedMonth = 'all'; // Reset month filter
+            resetAnnouncementFilters(); // Reset announcement filters
             loadTableData();
         }
         
@@ -1409,6 +1739,36 @@
                 currentSort.ascending = false;
             }
             currentPage = 1;
+            renderTable();
+        }
+
+        // Function to set month filter
+        function setMonthFilter(month) {
+            selectedMonth = month;
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Function to set announcement filter
+        function setAnnouncementFilter(filterType, value) {
+            announcementFilters[filterType] = value;
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Function to reset announcement filters
+        function resetAnnouncementFilters() {
+            announcementFilters = {
+                type: 'all',
+                uploadDate: 'all',
+                targetAudience: 'all'
+            };
+            selectedMonth = 'all';
+        }
+
+        // Function to toggle filter visibility
+        function toggleFilters() {
+            showFilters = !showFilters;
             renderTable();
         }
 
@@ -1471,6 +1831,60 @@
                 );
             }
 
+            // 1.5. Filter by month for announcements
+            if (currentTable === 'announcements' && selectedMonth !== 'all') {
+                const monthIndex = parseInt(selectedMonth);
+                processedData = processedData.filter(row => {
+                    if (row.posted_at) {
+                        const date = new Date(row.posted_at);
+                        return date.getMonth() === monthIndex;
+                    }
+                    return false;
+                });
+            }
+
+            // 1.6. Apply announcement filters (category, upload date, target audience)
+            if (currentTable === 'announcements') {
+                // Filter by category (type)
+                if (announcementFilters.type !== 'all') {
+                    processedData = processedData.filter(row => 
+                        row.category && row.category.toLowerCase() === announcementFilters.type.toLowerCase()
+                    );
+                }
+
+                // Filter by upload date
+                if (announcementFilters.uploadDate !== 'all') {
+                    const now = new Date();
+                    processedData = processedData.filter(row => {
+                        if (!row.posted_at) return false;
+                        const postedDate = new Date(row.posted_at);
+                        
+                        switch(announcementFilters.uploadDate) {
+                            case 'today':
+                                return postedDate.toDateString() === now.toDateString();
+                            case 'this_week':
+                                const weekAgo = new Date(now);
+                                weekAgo.setDate(now.getDate() - 7);
+                                return postedDate >= weekAgo;
+                            case 'this_month':
+                                return postedDate.getMonth() === now.getMonth() && 
+                                       postedDate.getFullYear() === now.getFullYear();
+                            case 'this_year':
+                                return postedDate.getFullYear() === now.getFullYear();
+                            default:
+                                return true;
+                        }
+                    });
+                }
+
+                // Filter by target audience
+                if (announcementFilters.targetAudience !== 'all') {
+                    processedData = processedData.filter(row => 
+                        row.target_audience && row.target_audience.toLowerCase() === announcementFilters.targetAudience.toLowerCase()
+                    );
+                }
+            }
+
             // 2. Sort data
             processedData.sort((a, b) => {
                 let valA = a[currentSort.column];
@@ -1519,6 +1933,78 @@
                         
                         <div class="flex items-center gap-4 flex-wrap justify-end">
             `;
+
+            // Add Filters button for announcements
+            if (currentTable === 'announcements') {
+                tableHTML += `
+                    <button onclick="toggleFilters()" class="w-full sm:w-auto px-4 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-gray-600" title="Toggle filters">
+                        <i class="fas fa-sliders-h"></i>
+                        <span>Filters</span>
+                    </button>
+                    </div>
+                    </div>
+                `;
+                
+                // Add collapsible filter section
+                if (showFilters) {
+                    tableHTML += `
+                        <div class="filter-section">
+                            <div class="filter-group">
+                                <span class="filter-label">Month</span>
+                                <div class="filter-tags">
+                                    <button class="filter-tag ${selectedMonth === 'all' ? 'active' : ''}" onclick="setMonthFilter('all')">All</button>
+                                    <button class="filter-tag ${selectedMonth === '0' ? 'active' : ''}" onclick="setMonthFilter('0')">Jan</button>
+                                    <button class="filter-tag ${selectedMonth === '1' ? 'active' : ''}" onclick="setMonthFilter('1')">Feb</button>
+                                    <button class="filter-tag ${selectedMonth === '2' ? 'active' : ''}" onclick="setMonthFilter('2')">Mar</button>
+                                    <button class="filter-tag ${selectedMonth === '3' ? 'active' : ''}" onclick="setMonthFilter('3')">Apr</button>
+                                    <button class="filter-tag ${selectedMonth === '4' ? 'active' : ''}" onclick="setMonthFilter('4')">May</button>
+                                    <button class="filter-tag ${selectedMonth === '5' ? 'active' : ''}" onclick="setMonthFilter('5')">Jun</button>
+                                    <button class="filter-tag ${selectedMonth === '6' ? 'active' : ''}" onclick="setMonthFilter('6')">Jul</button>
+                                    <button class="filter-tag ${selectedMonth === '7' ? 'active' : ''}" onclick="setMonthFilter('7')">Aug</button>
+                                    <button class="filter-tag ${selectedMonth === '8' ? 'active' : ''}" onclick="setMonthFilter('8')">Sep</button>
+                                    <button class="filter-tag ${selectedMonth === '9' ? 'active' : ''}" onclick="setMonthFilter('9')">Oct</button>
+                                    <button class="filter-tag ${selectedMonth === '10' ? 'active' : ''}" onclick="setMonthFilter('10')">Nov</button>
+                                    <button class="filter-tag ${selectedMonth === '11' ? 'active' : ''}" onclick="setMonthFilter('11')">Dec</button>
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <span class="filter-label">Type</span>
+                                <div class="filter-tags">
+                                    <button class="filter-tag ${announcementFilters.type === 'all' ? 'active' : ''}" onclick="setAnnouncementFilter('type', 'all')">All</button>
+                                    <button class="filter-tag ${announcementFilters.type === 'memo' ? 'active' : ''}" onclick="setAnnouncementFilter('type', 'memo')">Memo</button>
+                                    <button class="filter-tag ${announcementFilters.type === 'emergency' ? 'active' : ''}" onclick="setAnnouncementFilter('type', 'emergency')">Emergency</button>
+                                    <button class="filter-tag ${announcementFilters.type === 'notices' ? 'active' : ''}" onclick="setAnnouncementFilter('type', 'notices')">Notices</button>
+                                    <button class="filter-tag ${announcementFilters.type === 'deadline' ? 'active' : ''}" onclick="setAnnouncementFilter('type', 'deadline')">Deadline</button>
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <span class="filter-label">Upload Date</span>
+                                <div class="filter-tags">
+                                    <button class="filter-tag ${announcementFilters.uploadDate === 'all' ? 'active' : ''}" onclick="setAnnouncementFilter('uploadDate', 'all')">All</button>
+                                    <button class="filter-tag ${announcementFilters.uploadDate === 'today' ? 'active' : ''}" onclick="setAnnouncementFilter('uploadDate', 'today')">Today</button>
+                                    <button class="filter-tag ${announcementFilters.uploadDate === 'this_week' ? 'active' : ''}" onclick="setAnnouncementFilter('uploadDate', 'this_week')">This Week</button>
+                                    <button class="filter-tag ${announcementFilters.uploadDate === 'this_month' ? 'active' : ''}" onclick="setAnnouncementFilter('uploadDate', 'this_month')">This Month</button>
+                                    <button class="filter-tag ${announcementFilters.uploadDate === 'this_year' ? 'active' : ''}" onclick="setAnnouncementFilter('uploadDate', 'this_year')">This Year</button>
+                                </div>
+                            </div>
+                            <div class="filter-group">
+                                <span class="filter-label">Target Audience</span>
+                                <div class="filter-tags">
+                                    <button class="filter-tag ${announcementFilters.targetAudience === 'all' ? 'active' : ''}" onclick="setAnnouncementFilter('targetAudience', 'all')">All</button>
+                                    <button class="filter-tag ${announcementFilters.targetAudience === 'faculty' ? 'active' : ''}" onclick="setAnnouncementFilter('targetAudience', 'faculty')">Faculty</button>
+                                    <button class="filter-tag ${announcementFilters.targetAudience === 'students' ? 'active' : ''}" onclick="setAnnouncementFilter('targetAudience', 'students')">Students</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                tableHTML += `
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                        <div class="flex-1"></div>
+                        <div class="flex items-center gap-4 flex-wrap justify-end">
+                `;
+            }
 
             if (isArchivable) {
                 tableHTML += `
@@ -1661,7 +2147,7 @@
                             // Format date for posted_at
                             if (key === 'posted_at' && value) {
                                 const date = new Date(value);
-                                displayValue = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                displayValue = date.toLocaleDateString();
                             }
                             
                             const isIdCol = key === 'id';
@@ -1797,6 +2283,14 @@
         
             tableHTML += '</div>';
             document.getElementById('tableSection').innerHTML = tableHTML;
+
+            // Set month filter dropdown value for announcements
+            if (currentTable === 'announcements') {
+                const monthFilterSelector = document.getElementById('monthFilterSelector');
+                if (monthFilterSelector) {
+                    monthFilterSelector.value = selectedMonth;
+                }
+            }
 
             // --- NEW: Add logic for the auto-delete toggle ---
             if (isArchivable) {

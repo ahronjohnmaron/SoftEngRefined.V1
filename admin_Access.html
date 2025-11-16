@@ -2089,9 +2089,10 @@
                 } else {
                     // For other tables, show all columns except hidden ones
                     headers.forEach(key => {
-                        // MODIFIED: Hide archived, archived_at, and password for members/admins/members_req
+                        // MODIFIED: Hide archived, archived_at, password, and remember_me_preference for members/admins/members_req
                         const shouldHidePassword = key.toLowerCase().includes('password') && (currentTable === 'members' || currentTable === 'admins' || currentTable === 'members_req');
-                        if (key !== 'archived' && key !== 'archived_at' && !shouldHidePassword) {
+                        const shouldHideRememberMe = key === 'remember_me_preference' && (currentTable === 'members' || currentTable === 'admins' || currentTable === 'members_req');
+                        if (key !== 'archived' && key !== 'archived_at' && !shouldHidePassword && !shouldHideRememberMe) {
                             const isIdCol = key === 'id';
                             tableHTML += `
                                 <th class="px-4 py-3 text-left sortable ${isIdCol ? 'col-id' : ''}" onclick="handleSort('${key}')" title="Sort by ${key}">
@@ -2121,7 +2122,8 @@
                 } else {
                     const shouldHidePassword = currentTable === 'members' || currentTable === 'admins' || currentTable === 'members_req';
                     const passwordCols = shouldHidePassword ? headers.filter(h => h.toLowerCase().includes('password')).length : 0;
-                    colCount = headers.filter(h => h !== 'archived' && h !== 'archived_at').length - passwordCols + 2;
+                    const rememberMeCols = shouldHidePassword ? headers.filter(h => h === 'remember_me_preference').length : 0;
+                    colCount = headers.filter(h => h !== 'archived' && h !== 'archived_at').length - passwordCols - rememberMeCols + 2;
                 }
                 tableHTML += `
                     <tr>
@@ -2160,6 +2162,11 @@
 
                             // Skip password column for members, admins, and members_req tables
                             if (key.toLowerCase().includes('password') && (currentTable === 'members' || currentTable === 'admins' || currentTable === 'members_req')) {
+                                return;
+                            }
+
+                            // Skip remember_me_preference column for members, admins, and members_req tables
+                            if (key === 'remember_me_preference' && (currentTable === 'members' || currentTable === 'admins' || currentTable === 'members_req')) {
                                 return;
                             }
 

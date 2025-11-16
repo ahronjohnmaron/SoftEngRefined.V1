@@ -31,32 +31,32 @@
         }
 
         /* ============================================
-           CSS VARIABLES FOR THEME SYSTEM
-           ============================================
-           This section defines all color and styling variables
-           for both light and dark themes. All colors throughout
-           the page reference these variables for consistent theming.
-           ============================================ */
+            CSS VARIABLES FOR THEME SYSTEM
+            ============================================
+            This section defines all color and styling variables
+            for both light and dark themes. All colors throughout
+            the page reference these variables for consistent theming.
+            ============================================ */
         
         /* Light Theme (Default) */
         :root {
             /* Background Colors - Main page surfaces */
-            --bg-primary: #FFFFFF;        /* Main page background */
-            --bg-secondary: #F5F5F5;      /* Secondary sections (about cards, forms) */
-            --bg-card: #FFFFFF;           /* Feature cards and dev cards */
-            --bg-feature: #F5F5F5;        /* Features section background */
-            --bg-header: #FFFFFF;         /* Navigation header */
-            --bg-footer: #333333;         /* Footer background */
+            --bg-primary: #FFFFFF;      /* Main page background */
+            --bg-secondary: #F5F5F5;    /* Secondary sections (about cards, forms) */
+            --bg-card: #FFFFFF;         /* Feature cards and dev cards */
+            --bg-feature: #F5F5F5;      /* Features section background */
+            --bg-header: #FFFFFF;       /* Navigation header */
+            --bg-footer: #333333;       /* Footer background */
             
             /* Text Colors - Typography hierarchy */
-            --text-primary: #333333;      /* Main headings and body text */
-            --text-secondary: #666666;    /* Subheadings and descriptions */
-            --text-muted: #999999;        /* Less important text */
-            --text-footer: #FFFFFF;       /* Footer primary text */
+            --text-primary: #333333;    /* Main headings and body text */
+            --text-secondary: #666666;  /* Subheadings and descriptions */
+            --text-muted: #999999;      /* Less important text */
+            --text-footer: #FFFFFF;     /* Footer primary text */
             --text-footer-secondary: #CCCCCC; /* Footer secondary text */
             
             /* Border & Shadow - Depth and separation */
-            --border-color: #E0E0E0;      /* Borders for inputs, buttons, cards */
+            --border-color: #E0E0E0;    /* Borders for inputs, buttons, cards */
             --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.05);   /* Small shadow for header */
             --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.05);   /* Medium shadow for cards */
             --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.1);    /* Large shadow for hero image */
@@ -81,7 +81,7 @@
             --btn-secondary-hover-text: #9FE870;
             
             /* Link Colors - Navigation and text links */
-            --link-color: #666666;        /* Default link color */
+            --link-color: #666666;      /* Default link color */
             --link-hover-color: #9FE870;  /* Link hover state */
             
             /* Transition - Smooth theme switching */
@@ -91,22 +91,22 @@
         /* Dark Theme - Applied when body has 'dark-theme' class */
         body.dark-theme {
             /* Background Colors - Dark surfaces with proper contrast */
-            --bg-primary: #1a1a1a;        /* Main dark background */
-            --bg-secondary: #2a2a2a;      /* Slightly lighter for sections */
-            --bg-card: #242424;           /* Card backgrounds */
-            --bg-feature: #2a2a2a;        /* Features section */
-            --bg-header: #242424;         /* Dark header */
-            --bg-footer: #1a1a1a;         /* Dark footer */
+            --bg-primary: #1a1a1a;      /* Main dark background */
+            --bg-secondary: #2a2a2a;    /* Slightly lighter for sections */
+            --bg-card: #242424;         /* Card backgrounds */
+            --bg-feature: #2a2a2a;      /* Features section */
+            --bg-header: #242424;       /* Dark header */
+            --bg-footer: #1a1a1a;       /* Dark footer */
             
             /* Text Colors - Light text on dark backgrounds */
-            --text-primary: #e0e0e0;      /* High contrast for readability */
-            --text-secondary: #b0b0b0;    /* Medium contrast for descriptions */
-            --text-muted: #808080;        /* Low contrast for less important text */
-            --text-footer: #e0e0e0;       /* Footer text */
+            --text-primary: #e0e0e0;    /* High contrast for readability */
+            --text-secondary: #b0b0b0;  /* Medium contrast for descriptions */
+            --text-muted: #808080;      /* Low contrast for less important text */
+            --text-footer: #e0e0e0;      /* Footer text */
             --text-footer-secondary: #b0b0b0; /* Footer secondary text */
             
             /* Border & Shadow - Adjusted for dark theme */
-            --border-color: #404040;      /* Lighter borders for visibility */
+            --border-color: #404040;    /* Lighter borders for visibility */
             --shadow-sm: 0 2px 10px rgba(0, 0, 0, 0.3);   /* Deeper shadows */
             --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
             --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
@@ -131,17 +131,13 @@
             --btn-secondary-hover-text: #9FE870;
             
             /* Link Colors - Adjusted for dark backgrounds */
-            --link-color: #b0b0b0;        /* Lighter default links */
+            --link-color: #b0b0b0;      /* Lighter default links */
             --link-hover-color: #9FE870;  /* Brand green on hover */
         }
 
         /* ============================================
-           BODY - GLOBAL THEME APPLICATION
-           ============================================
-           Applies theme colors and smooth transitions to entire page.
-           The transition property enables smooth color changes when
-           switching between light and dark themes.
-           ============================================ */
+            BODY - GLOBAL THEME APPLICATION
+            ============================================ */
         body {
             font-family: 'Poppins', sans-serif;
             background-color: var(--bg-primary);  /* Theme-aware background */
@@ -150,11 +146,8 @@
         }
 
         /* ============================================
-           HEADER/NAVIGATION - THEME-AWARE STYLES
-           ============================================
-           Navigation header uses CSS variables for colors,
-           ensuring it adapts to both light and dark themes.
-           ============================================ */
+            HEADER/NAVIGATION - THEME-AWARE STYLES
+            ============================================ */
         header {
             background-color: var(--bg-header);   /* Theme-aware header background */
             box-shadow: var(--shadow-sm);         /* Theme-aware shadow */
@@ -221,80 +214,59 @@
         }
 
         /* ============================================
-           THEME TOGGLE BUTTON STYLES
-           ============================================
-           Circular button in navigation header that allows users
-           to switch between light and dark themes.
-           
-           Features:
-           - Circular design with icon (moon/sun)
-           - Smooth hover and active state animations
-           - Keyboard accessible with focus states
-           - Fallback text icons if Font Awesome fails
-           
-           Requirements: 1.2, 5.1, 5.2, 5.3, 5.4, 5.5
-           ============================================ */
+            THEME TOGGLE BUTTON STYLES
+            ============================================ */
         
         .theme-toggle-btn {
-            background: none;                    /* Transparent background */
+            background: none;                 /* Transparent background */
             border: 2px solid var(--border-color); /* Themed border */
-            color: var(--text-primary);          /* Themed icon color */
-            width: 40px;                         /* Fixed circular size */
+            color: var(--text-primary);         /* Themed icon color */
+            width: 40px;                      /* Fixed circular size */
             height: 40px;
-            border-radius: 50%;                  /* Perfect circle */
-            display: flex;                       /* Center icon */
+            border-radius: 50%;               /* Perfect circle */
+            display: flex;                    /* Center icon */
             align-items: center;
             justify-content: center;
-            cursor: pointer;                     /* Indicate clickability */
-            transition: all 0.3s ease;          /* Smooth state transitions */
-            font-size: 1.1rem;                  /* Icon size */
+            cursor: pointer;                  /* Indicate clickability */
+            transition: all 0.3s ease;        /* Smooth state transitions */
+            font-size: 1.1rem;                /* Icon size */
         }
 
-        /* Hover state - Visual feedback on mouse over */
         .theme-toggle-btn:hover {
             background-color: var(--bg-secondary); /* Subtle background */
             border-color: var(--accent-green);     /* Brand color highlight */
             color: var(--accent-green);            /* Icon turns green */
-            transform: rotate(20deg);              /* Playful rotation effect */
+            transform: rotate(20deg);            /* Playful rotation effect */
         }
 
-        /* Active state - Feedback when clicking */
         .theme-toggle-btn:active {
             transform: scale(0.95) rotate(20deg); /* Slight press-down effect */
         }
 
-        /* Focus state - Keyboard navigation accessibility */
         .theme-toggle-btn:focus {
-            outline: none;                         /* Remove default outline */
-            border-color: var(--accent-green);     /* Green border */
+            outline: none;                    /* Remove default outline */
+            border-color: var(--accent-green);  /* Green border */
             box-shadow: 0 0 0 3px var(--accent-shadow); /* Focus ring */
         }
 
-        /* Icon transition for smooth animation */
         .theme-toggle-btn i {
             transition: transform 0.3s ease;
         }
 
         /* ============================================
-           FONT AWESOME FALLBACK SYSTEM
-           ============================================
-           Provides text-based icons (☀ ☾) if Font Awesome
-           CDN fails to load, ensuring button remains functional.
-           ============================================ */
+            FONT AWESOME FALLBACK SYSTEM
+            ============================================ */
         
-        /* Hide fallback text by default (Font Awesome icons shown) */
         .theme-toggle-btn .icon-fallback {
             display: none;
             font-size: 1.2rem;
             font-style: normal;
         }
 
-        /* Show fallback text when Font Awesome fails */
         .theme-toggle-btn.no-fa .icon-fallback {
             display: inline;
         }
 
-        /* Hide Font Awesome icon when using fallback */
         .theme-toggle-btn.no-fa i {
             display: none;
         }
@@ -583,7 +555,6 @@
             transform: translateY(-5px);
             box-shadow: var(--shadow-card-hover);
         }
-
         
 
         .dev-avatar img {
@@ -597,6 +568,8 @@
             margin: 0 auto 1.5rem;
             font-size: 3rem;
             color: var(--btn-primary-text);
+            /* Ensure image covers the area */
+            object-fit: cover; 
         }
 
         .dev-card h4 {
@@ -707,6 +680,9 @@
             font-family: 'Poppins', sans-serif;
             font-size: 1rem;
             transition: border-color 0.3s;
+            /* Added for theme compatibility */
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
         }
 
         .form-group input:focus,
@@ -791,7 +767,9 @@
             cursor: pointer;
         }
 
-        /* Responsive Design */
+        /* ============================================
+           Responsive Design
+           ============================================ */
         @media (max-width: 968px) {
             .hero {
                 grid-template-columns: 1fr;
@@ -802,19 +780,50 @@
                 font-size: 2.5rem;
             }
 
+            /* --- UPDATED Mobile Navigation Styles --- */
             .nav-links {
-                display: none;
+                /* This is the default (closed) state */
+                display: none; 
+                
+                /* This is the styling for the dropdown menu */
+                flex-direction: column;
+                position: absolute;
+                top: 100%; /* Position below header */
+                left: 0;
+                right: 0;
+                background-color: var(--bg-header);
+                padding: 2rem;
+                box-shadow: var(--shadow-md);
+                gap: 1.5rem; /* Space out links */
+                align-items: flex-start; /* Align items left */
+                z-index: 99; /* Ensure it's above content */
             }
 
-            .mobile-menu-btn {
-                display: block;
+            /* This class is toggled by JS to show the menu */
+            .nav-links.nav-links-open {
+                display: flex;
             }
 
-            /* Theme toggle button in mobile menu */
+            /* Make links/buttons full-width in mobile menu */
+            .nav-links a {
+                width: 100%;
+                padding: 0.5rem 0;
+            }
+            .nav-links .login-btn {
+                width: 100%;
+                text-align: center;
+            }
             .nav-links .theme-toggle-btn {
                 margin: 0.5rem 0;
                 align-self: flex-start;
             }
+
+            .mobile-menu-btn {
+                display: block;
+                z-index: 100; /* Keep it above the menu */
+            }
+            /* --- End Mobile Nav Styles --- */
+
 
             .about-grid {
                 grid-template-columns: 1fr;
@@ -826,12 +835,62 @@
         }
 
         @media (max-width: 640px) {
+            /* --- ADDED: Header/Nav adjustments --- */
+            .nav-container {
+                padding: 1rem; /* Reduce nav padding */
+            }
+            .logo {
+                font-size: 1.1rem; /* Shrink font */
+                gap: 0.5rem; /* Reduce gap */
+            }
+            .logo i {
+                font-size: 1.5rem; /* Shrink icon */
+            }
+            .nav-container p { /* The "DEPTHUB" badge */
+                padding: 4px 8px;
+                font-size: 0.9rem;
+            }
+
+            /* --- ADDED: Section padding adjustments --- */
+            .hero {
+                padding: 2.5rem 1rem; 
+            }
+            .features, .about, .page-content {
+                padding: 3rem 1rem; 
+            }
+
+            /* --- ADDED: Card padding adjustments --- */
+            .feature-card, .dev-card, .doc-card {
+                padding: 1.5rem;
+            }
+            .contact-form {
+                padding: 1.5rem;
+            }
+            footer {
+                padding: 2rem 1rem;
+            }
+
+
             .hero-content h1 {
                 font-size: 2rem;
             }
 
             .section-title {
                 font-size: 2rem;
+            }
+
+            /* --- ADDED: Typography adjustments --- */
+            .page-content h2 {
+                font-size: 2rem;
+            }
+            .page-content h3 {
+                font-size: 1.5rem;
+            }
+            .feature-card h3, .about-card h3, .dev-card h4 {
+                font-size: 1.25rem;
+            }
+            .dev-team h3 {
+                font-size: 1.75rem;
             }
 
             .hero-buttons {
@@ -848,7 +907,6 @@
                 padding: 2rem;
             }
 
-            /* Ensure theme toggle is visible on small screens */
             .theme-toggle-btn {
                 width: 38px;
                 height: 38px;
@@ -858,7 +916,6 @@
     </style>
 </head>
 <body>
-    <!-- Header -->
     <header>
         <nav class="nav-container">
             <a href="#" class="logo" onclick="showHome(); return false;">
@@ -881,9 +938,7 @@
         </nav>
     </header>
 
-    <!-- Main Content Area -->
     <div id="main-content">
-        <!-- Hero Section -->
         <section class="hero">
             <div class="hero-content">
                 <h1>A Department Centralized Announcement <span>System</span></h1>
@@ -897,11 +952,10 @@
                 </div>
             </div>
             <div class="hero-image">
-                <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop" alt="Dashboard Preview">
+                <img src="https://dqtictujkhxultwoaqaw.supabase.co/storage/v1/object/public/Avatar/Untitled%20design.png" alt="Dashboard Preview">
             </div>
         </section>
 
-        <!-- Features Section -->
         <section class="features" id="features">
             <div class="features-container">
                 <h2 class="section-title">Powerful Features</h2>
@@ -959,7 +1013,6 @@
             </div>
         </section>
 
-        <!-- About Us Section -->
         <section class="about" id="about">
             <div class="about-container">
                 <h2 class="section-title">About Us</h2>
@@ -1008,7 +1061,6 @@
                     </div>
                 </div>
 
-                <!-- Developer Team -->
                 <div class="dev-team">
                     <h3>Meet Our Development Team</h3>
                     <div class="dev-grid">
@@ -1045,7 +1097,6 @@
 
     </div>
 
-    <!-- Documentation Page -->
     <div id="documentation-page" class="page-content">
         <h2>Documentation</h2>
         <p>Welcome to the CENTRANOUNCEIT DEPTHUB documentation. This guide will help you understand and use all features of our platform effectively.</p>
@@ -1160,7 +1211,6 @@
         <p style="margin-top: 3rem;"><strong>Need more help?</strong> Contact our support team at <a href="#" onclick="showContactPage(); return false;" style="color: var(--link-hover-color); text-decoration: underline;">campusannouncement54321@gmail.com</a></p>
     </div>
 
-    <!-- Help Center Page -->
     <div id="help-page" class="page-content">
         <h2>Help Center</h2>
         <p>Find quick answers to common questions and learn how to make the most of CENTRANOUNCEIT DEPTHUB.</p>
@@ -1252,7 +1302,6 @@
         </div>
     </div>
 
-    <!-- Contact Us Page -->
     <div id="contact-page" class="page-content">
         <h2>Contact Us</h2>
         <p>Have questions or need support? We're here to help! Reach out to us using the form below or through our contact information.</p>
@@ -1304,7 +1353,6 @@
         </div>
     </div>
 
-    <!-- Privacy Policy Page -->
     <div id="privacy-page" class="page-content">
         <h2>Privacy Policy</h2>
         <p><strong>Last Updated:</strong> November 9, 2025</p>
@@ -1446,7 +1494,6 @@
         </div>
     </div>
 
-    <!-- Terms of Service Page -->
     <div id="terms-page" class="page-content">
         <h2>Terms of Service</h2>
         <p><strong>Last Updated:</strong> November 9, 2025</p>
@@ -1642,7 +1689,6 @@
         <p style="margin-top: 3rem; font-weight: 600;">By using CENTRANOUNCEIT DEPTHUB, you acknowledge that you have read, understood, and agree to be bound by these Terms of Service.</p>
     </div>
 
-    <!-- Footer -->
     <footer id="contact">
         <div class="footer-container">
             <div class="footer-section">
@@ -1653,7 +1699,7 @@
                 <h4>Quick Links</h4>
                 <a href="#features" onclick="showHome(); return false;">Features</a>
                 <a href="#about" onclick="showHome(); return false;">About Us</a>
-                <a href="login.html">Admin Login</a>
+                <a href="admin_Access.html">Admin Login</a>
                 <a href="#" onclick="showDocPage(); return false;">Documentation</a>
             </div>
             <div class="footer-section">
@@ -1667,7 +1713,6 @@
                 <h4>Contact</h4>
                 <p>Email: campusannouncement54321@gmail.com</p>
                 <p>Phone: +63 (125) 933-5023</p>
-                <p>Available: 24/7 Support</p>
             </div>
         </div>
         <div class="footer-bottom">
@@ -1677,15 +1722,11 @@
 
     <script>
         /* ============================================
-           PAGE NAVIGATION FUNCTIONS
-           ============================================
-           Single-page application navigation system that shows/hides
-           different content sections without page reloads.
-           ============================================ */
+            PAGE NAVIGATION FUNCTIONS
+            ============================================ */
         
         /**
          * Hide all page sections
-         * Helper function to hide all content sections before showing a new one
          */
         function hideAllPages() {
             document.getElementById('main-content').style.display = 'none';
@@ -1751,15 +1792,11 @@
         }
 
         /* ============================================
-           CONTACT FORM HANDLER
-           ============================================
-           Processes contact form submissions
-           ============================================ */
+            CONTACT FORM HANDLER
+            ============================================ */
         
         /**
          * Handle contact form submission
-         * Prevents default form submission and processes data
-         * 
          * @param {Event} event - Form submit event
          */
         function handleContactForm(event) {
@@ -1782,199 +1819,168 @@
         }
 
         /* ============================================
-           SMOOTH SCROLLING FOR ANCHOR LINKS
-           ============================================
-           Enables smooth scrolling when clicking navigation links
-           ============================================ */
+            SMOOTH SCROLLING FOR ANCHOR LINKS
+            ============================================ */
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
                 const href = this.getAttribute('href');
                 // Only handle actual anchor links (not just "#")
                 if (href.startsWith('#') && href.length > 1) {
                     e.preventDefault();
-                    const target = document.querySelector(href);
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'start'
-                        });
+                    // First, ensure the home page is visible if we're scrolling to a home section
+                    if (href === '#features' || href === '#about' || href === '#contact') {
+                        showHome();
                     }
+                    
+                    // Use a slight timeout to ensure the element is visible before scrolling
+                    setTimeout(() => {
+                        const target = document.querySelector(href);
+                        if (target) {
+                            target.scrollIntoView({
+                                behavior: 'smooth',
+                                block: 'start'
+                            });
+                        }
+                    }, 50); // 50ms delay
                 }
             });
         });
 
         /* ============================================
-           MOBILE MENU SYSTEM
-           ============================================
-           Handles responsive navigation menu for mobile devices.
-           Uses theme-aware CSS variables for styling.
-           ============================================ */
+            --- UPDATED MOBILE MENU SYSTEM ---
+            ============================================
+            Handles responsive navigation menu for mobile devices.
+            Uses CSS classes for robust state management.
+            ============================================ */
         
         const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
         const navLinks = document.querySelector('.nav-links');
-        
+        const mobileNavLinks = navLinks.querySelectorAll('a');
+
         /**
          * Toggle mobile menu open/closed
-         * Applies theme-aware styles dynamically
          */
         mobileMenuBtn.addEventListener('click', function() {
-            if (navLinks.style.display === 'flex') {
-                // Close menu
-                navLinks.style.display = 'none';
+            navLinks.classList.toggle('nav-links-open');
+            
+            // Toggle hamburger icon to 'X' icon
+            const icon = mobileMenuBtn.querySelector('i');
+            if (navLinks.classList.contains('nav-links-open')) {
+                icon.classList.remove('fa-bars');
+                icon.classList.add('fa-times');
             } else {
-                // Open menu with theme-aware styling
-                navLinks.style.display = 'flex';
-                navLinks.style.flexDirection = 'column';
-                navLinks.style.position = 'absolute';
-                navLinks.style.top = '100%';
-                navLinks.style.left = '0';
-                navLinks.style.right = '0';
-                // Use CSS variable for background (theme-aware)
-                navLinks.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--bg-header').trim();
-                navLinks.style.padding = '2rem';
-                // Use CSS variable for shadow (theme-aware)
-                navLinks.style.boxShadow = getComputedStyle(document.documentElement).getPropertyValue('--shadow-md').trim();
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
             }
         });
 
         /**
+         * Close mobile menu when a link is clicked
+         */
+        mobileNavLinks.forEach(link => {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 968 && navLinks.classList.contains('nav-links-open')) {
+                    navLinks.classList.remove('nav-links-open');
+                    
+                    // Reset icon
+                    const icon = mobileMenuBtn.querySelector('i');
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+            });
+        });
+
+        /**
          * Close mobile menu when clicking outside
-         * Improves UX by auto-closing menu
          */
         document.addEventListener('click', function(event) {
-            const isClickInside = event.target.closest('nav');
-            if (!isClickInside && window.innerWidth <= 968) {
-                navLinks.style.display = 'none';
+            const isClickInsideNav = event.target.closest('nav');
+            
+            // If menu is open and click is outside <nav>
+            if (!isClickInsideNav && navLinks.classList.contains('nav-links-open')) {
+                navLinks.classList.remove('nav-links-open');
+                
+                // Reset icon
+                const icon = mobileMenuBtn.querySelector('i');
+                icon.classList.remove('fa-times');
+                icon.classList.add('fa-bars');
             }
         });
 
         /**
          * Handle window resize
-         * Ensures menu displays correctly when switching between mobile/desktop
+         * Resets menu state when resizing to desktop
          */
         window.addEventListener('resize', function() {
             if (window.innerWidth > 968) {
-                // Desktop view - show menu inline
-                navLinks.style.display = 'flex';
-                navLinks.style.flexDirection = 'row';
-                navLinks.style.position = 'static';
-                navLinks.style.padding = '0';
-                navLinks.style.boxShadow = 'none';
-            } else {
-                // Mobile view - hide menu by default
-                navLinks.style.display = 'none';
+                // If we resized to desktop, remove mobile classes/styles
+                if (navLinks.classList.contains('nav-links-open')) {
+                    navLinks.classList.remove('nav-links-open');
+                    const icon = mobileMenuBtn.querySelector('i');
+                    icon.classList.remove('fa-times');
+                    icon.classList.add('fa-bars');
+                }
+                // Remove any inline styles that might remain
+                navLinks.removeAttribute('style');
             }
         });
 
         /* ============================================
-           THEME CONTROLLER - DARK/LIGHT MODE SYSTEM
-           ============================================
-           This section handles the dark/light theme toggle functionality.
-           
-           Key Features:
-           - Persists user preference in localStorage
-           - Smooth transitions between themes using CSS variables
-           - Graceful fallback if localStorage is unavailable
-           - Icon updates to reflect current theme state
-           - Font Awesome fallback for icon loading failures
-           
-           Requirements Addressed:
-           - Req 1.1: Theme toggle within 300ms
-           - Req 2.1, 2.2: Theme persistence in localStorage
-           - Req 1.5: Dynamic icon updates
-           ============================================ */
+            THEME CONTROLLER - DARK/LIGHT MODE SYSTEM
+            ============================================ */
         
         /**
          * Initialize theme on page load
-         * 
-         * Checks localStorage for saved theme preference and applies it.
-         * If no preference exists, defaults to light theme.
-         * Includes error handling for browsers with localStorage disabled.
-         * 
-         * @function initTheme
-         * @returns {void}
          */
         function initTheme() {
             try {
-                // Retrieve saved theme preference from localStorage
                 const savedTheme = localStorage.getItem('theme');
                 
                 if (savedTheme === 'dark') {
-                    // Apply dark theme by adding class to body
                     document.body.classList.add('dark-theme');
                     updateThemeIcon('dark');
                 } else {
-                    // Default to light theme (no class needed)
                     updateThemeIcon('light');
                 }
             } catch (error) {
-                // Handle localStorage errors (private browsing, disabled storage, etc.)
                 console.error('Error loading theme preference:', error);
-                // Gracefully degrade - default to light theme without persistence
                 updateThemeIcon('light');
             }
         }
 
         /**
          * Toggle between light and dark themes
-         * 
-         * Toggles the 'dark-theme' class on body element, which triggers
-         * CSS variable changes for smooth theme transition. Saves preference
-         * to localStorage for persistence across sessions.
-         * 
-         * @function toggleTheme
-         * @returns {void}
          */
         function toggleTheme() {
-            // Toggle dark-theme class and get current state
             const isDark = document.body.classList.toggle('dark-theme');
             const theme = isDark ? 'dark' : 'light';
             
             try {
-                // Persist theme preference to localStorage
                 localStorage.setItem('theme', theme);
             } catch (error) {
-                // Handle localStorage errors gracefully
                 console.error('Error saving theme preference:', error);
-                // Continue without persistence if localStorage is unavailable
-                // Theme will still work for current session
             }
             
-            // Update toggle button icon to reflect new theme
             updateThemeIcon(theme);
         }
 
         /**
          * Update theme toggle button icon
-         * 
-         * Changes the icon to reflect the current theme state:
-         * - Light theme: Shows moon icon (clicking will switch to dark)
-         * - Dark theme: Shows sun icon (clicking will switch to light)
-         * 
-         * Also updates fallback text icon in case Font Awesome fails to load.
-         * 
-         * @function updateThemeIcon
-         * @param {string} theme - Current theme ('light' or 'dark')
-         * @returns {void}
          */
         function updateThemeIcon(theme) {
             const icon = document.getElementById('theme-icon');
             const fallbackIcon = document.getElementById('theme-icon-fallback');
             
-            // Update Font Awesome icon classes
             if (icon) {
                 if (theme === 'dark') {
-                    // Dark theme active: show sun icon (to switch back to light)
                     icon.classList.remove('fa-moon');
                     icon.classList.add('fa-sun');
                 } else {
-                    // Light theme active: show moon icon (to switch to dark)
                     icon.classList.remove('fa-sun');
                     icon.classList.add('fa-moon');
                 }
             }
             
-            // Update fallback text icon (used if Font Awesome fails to load)
             if (fallbackIcon) {
                 fallbackIcon.textContent = theme === 'dark' ? '☀' : '☾';
             }
@@ -1982,39 +1988,23 @@
 
         /**
          * Check if Font Awesome icons loaded successfully
-         * 
-         * Verifies that Font Awesome CSS is loaded and icons are rendering.
-         * If Font Awesome fails to load, enables text-based fallback icons
-         * to ensure the theme toggle remains functional.
-         * 
-         * Uses a 1-second delay to allow Font Awesome time to load before
-         * falling back to text icons.
-         * 
-         * @function checkFontAwesomeLoaded
-         * @returns {void}
          */
         function checkFontAwesomeLoaded() {
             const themeToggleBtn = document.getElementById('theme-toggle');
             const icon = document.getElementById('theme-icon');
             
-            // Exit if elements don't exist
             if (!icon || !themeToggleBtn) return;
             
-            // Check if Font Awesome is loaded by inspecting computed font-family
             const computedStyle = window.getComputedStyle(icon, ':before');
             const fontFamily = computedStyle.getPropertyValue('font-family');
             
-            // If Font Awesome isn't detected immediately, wait and recheck
             if (!fontFamily || !fontFamily.includes('Font Awesome')) {
-                // Give Font Awesome 1 second to load from CDN
                 setTimeout(function() {
                     const recheckStyle = window.getComputedStyle(icon, ':before');
                     const recheckFont = recheckStyle.getPropertyValue('font-family');
                     
-                    // If still not loaded, enable text fallback
                     if (!recheckFont || !recheckFont.includes('Font Awesome')) {
                         console.warn('Font Awesome icons failed to load, using text fallback');
-                        // Add class to show text icons instead
                         themeToggleBtn.classList.add('no-fa');
                     }
                 }, 1000);
@@ -2023,18 +2013,11 @@
 
         /**
          * Initialize theme system on page load
-         * 
-         * Sets up event listeners and initializes theme state when DOM is ready.
-         * This ensures all elements exist before attempting to manipulate them.
          */
         document.addEventListener('DOMContentLoaded', function() {
-            // Initialize theme from localStorage or default to light
             initTheme();
-            
-            // Check if Font Awesome loaded successfully
             checkFontAwesomeLoaded();
             
-            // Attach click handler to theme toggle button
             const themeToggleBtn = document.getElementById('theme-toggle');
             if (themeToggleBtn) {
                 themeToggleBtn.addEventListener('click', toggleTheme);
@@ -2043,5 +2026,3 @@
     </script>
 </body>
 </html>
-
-

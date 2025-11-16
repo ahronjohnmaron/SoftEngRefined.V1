@@ -428,16 +428,100 @@
             box-shadow: 0 4px 12px rgba(159, 232, 112, 0.3);
         }
 
-        .filter-bar i {
+        .filter-button {
             color: var(--text-secondary);
             cursor: pointer;
-            font-size: 1.2rem;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            padding: 8px 16px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .filter-button:hover {
+            color: var(--accent-green);
+            background-color: var(--hover-bg);
+        }
+
+        .filter-button i {
+            font-size: 1.1rem;
+        }
+
+        /* Filter Panel Styles */
+        .filter-panel {
+            display: none;
+            background-color: var(--secondary-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 30px;
+            animation: slideDown 0.3s ease;
+        }
+
+        .filter-panel.active {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+        }
+
+        .filter-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .filter-section-title {
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .filter-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-option {
+            padding: 8px 16px;
+            border-radius: 10px;
+            background-color: var(--primary-bg);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
             transition: all 0.3s;
         }
 
-        .filter-bar i:hover {
-            color: var(--accent-green);
-            transform: rotate(90deg);
+        .filter-option:hover {
+            background-color: var(--hover-bg);
+            color: var(--text-primary);
+            border-color: var(--accent-green);
+        }
+
+        .filter-option.active {
+            background: linear-gradient(135deg, var(--accent-green) 0%, #7acc50 100%);
+            color: #000000;
+            border-color: var(--accent-green);
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(159, 232, 112, 0.3);
         }
 
         /* --- 4. NEWS CARD & GRID STYLES --- */
@@ -949,7 +1033,35 @@
                 <a href="#" class="filter-link" data-category="Memo" onclick="event.preventDefault(); showCategory('Memo')">Memo</a>
                 <a href="#" class="filter-link" data-category="Notices" onclick="event.preventDefault(); showCategory('Notices')">Notices</a>
             </div>
-            <i class="fas fa-filter" title="Filter categories"></i>
+            <div class="filter-button" onclick="toggleFilterPanel()" style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-sliders-h"></i>
+                <span style="font-weight: 500;">Filters</span>
+            </div>
+        </div>
+
+        <div class="filter-panel" id="filterPanel">
+            <div class="filter-section">
+                <div class="filter-section-title">SORT BY DATE POSTED</div>
+                <div class="filter-options">
+                    <button class="filter-option active" data-sort="posted-newest" onclick="setSortOrder('posted-newest')">Newest to Oldest</button>
+                    <button class="filter-option" data-sort="posted-oldest" onclick="setSortOrder('posted-oldest')">Oldest to Newest</button>
+                </div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-section-title">SORT BY SCHEDULED DATE</div>
+                <div class="filter-options">
+                    <button class="filter-option" data-sort="scheduled-newest" onclick="setSortOrder('scheduled-newest')">Newest to Oldest</button>
+                    <button class="filter-option" data-sort="scheduled-oldest" onclick="setSortOrder('scheduled-oldest')">Oldest to Newest</button>
+                </div>
+            </div>
+            <div class="filter-section">
+                <div class="filter-section-title">SORT BY TARGET AUDIENCE</div>
+                <div class="filter-options">
+                    <button class="filter-option" data-sort="audience-all" onclick="setSortOrder('audience-all')">All</button>
+                    <button class="filter-option" data-sort="audience-students" onclick="setSortOrder('audience-students')">Students</button>
+                    <button class="filter-option" data-sort="audience-faculty" onclick="setSortOrder('audience-faculty')">Faculty</button>
+                </div>
+            </div>
         </div>
         
         <div class="news-grid" id="newsGrid">
@@ -1077,6 +1189,7 @@
     let currentUserProfile = {};
     let currentPage = 1;
     const itemsPerPage = 12;
+    let currentSortOrder = 'posted-newest'; // Default sort by posted date, newest first
 
     // ============================================
     // THEME TOGGLE FUNCTION
@@ -1111,6 +1224,100 @@
             body.classList.remove('light-mode');
             themeIcon.classList.remove('fa-sun');
             themeIcon.classList.add('fa-moon');
+        }
+    }
+
+    // ============================================
+    // FILTER PANEL FUNCTIONS
+    // ============================================
+    function toggleFilterPanel() {
+        const filterPanel = document.getElementById('filterPanel');
+        filterPanel.classList.toggle('active');
+    }
+
+    function setSortOrder(order) {
+        currentSortOrder = order;
+        
+        // Update active state on buttons
+        document.querySelectorAll('.filter-option[data-sort]').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        document.querySelector(`.filter-option[data-sort="${order}"]`).classList.add('active');
+        
+        // Apply filtering and sorting
+        applyFiltersAndSort();
+        displayAnnouncements(filteredAnnouncements, currentSearchTerm);
+        updatePagination();
+    }
+
+    function applyFiltersAndSort() {
+        // Start with all announcements or search results
+        if (currentSearchTerm) {
+            // If there's a search term, filter from allAnnouncements
+            filteredAnnouncements = allAnnouncements.filter(announcement => {
+                const userName = announcement.members?.full_name || announcement.posted_by || '';
+                const formattedDate = formatDate(announcement.scheduled_date).toLowerCase();
+
+                return (
+                    (announcement.title && announcement.title.toLowerCase().includes(currentSearchTerm)) ||
+                    (announcement.description && announcement.description.toLowerCase().includes(currentSearchTerm)) ||
+                    (announcement.summary && announcement.summary.toLowerCase().includes(currentSearchTerm)) ||
+                    (announcement.category && announcement.category.toLowerCase().includes(currentSearchTerm)) ||
+                    (announcement.target_audience && announcement.target_audience.toLowerCase().includes(currentSearchTerm)) ||
+                    (announcement.why && announcement.why.toLowerCase().includes(currentSearchTerm)) ||
+                    (announcement.location && announcement.location.toLowerCase().includes(currentSearchTerm)) ||
+                    (userName && userName.toLowerCase().includes(currentSearchTerm)) ||
+                    (formattedDate && formattedDate.includes(currentSearchTerm))
+                );
+            });
+        } else {
+            filteredAnnouncements = [...allAnnouncements];
+        }
+
+        // Apply target audience filter
+        if (currentSortOrder.startsWith('audience-')) {
+            const audienceType = currentSortOrder.replace('audience-', '');
+            if (audienceType !== 'all') {
+                filteredAnnouncements = filteredAnnouncements.filter(announcement => {
+                    const audience = (announcement.target_audience || '').toLowerCase();
+                    return audience.includes(audienceType);
+                });
+            }
+        }
+
+        // Apply sorting
+        sortAnnouncements();
+    }
+
+    function sortAnnouncements() {
+        // Only sort by date if not filtering by audience
+        if (!currentSortOrder.startsWith('audience-')) {
+            filteredAnnouncements.sort((a, b) => {
+                let dateA, dateB;
+                
+                // Determine which date field to use
+                if (currentSortOrder === 'posted-newest' || currentSortOrder === 'posted-oldest') {
+                    dateA = new Date(a.created_at);
+                    dateB = new Date(b.created_at);
+                } else if (currentSortOrder === 'scheduled-newest' || currentSortOrder === 'scheduled-oldest') {
+                    dateA = new Date(a.scheduled_date);
+                    dateB = new Date(b.scheduled_date);
+                }
+                
+                // Determine sort direction
+                if (currentSortOrder === 'posted-newest' || currentSortOrder === 'scheduled-newest') {
+                    return dateB - dateA; // Newest first
+                } else {
+                    return dateA - dateB; // Oldest first
+                }
+            });
+        } else {
+            // When filtering by audience, still sort by posted date (newest first) as secondary sort
+            filteredAnnouncements.sort((a, b) => {
+                const dateA = new Date(a.created_at);
+                const dateB = new Date(b.created_at);
+                return dateB - dateA;
+            });
         }
     }
 
@@ -1412,18 +1619,16 @@ async function loadAnnouncements(category = 'all-announcement', preservePage = f
         console.log('📊 Total found:', data ? data.length : 0);
         
         allAnnouncements = data || [];
-        filteredAnnouncements = data || [];
-        // Only reset to page 1 if not preserving page state
-if (!preservePage) {
-    currentPage = 1;
-}
         
-        if (currentSearchTerm) {
-    searchAnnouncements(preservePage);
-        } else {
-            displayAnnouncements(filteredAnnouncements);
-            updatePagination();
+        // Only reset to page 1 if not preserving page state
+        if (!preservePage) {
+            currentPage = 1;
         }
+        
+        // Apply filters and sorting
+        applyFiltersAndSort();
+        displayAnnouncements(filteredAnnouncements, currentSearchTerm);
+        updatePagination();
         
     } catch (error) {
         console.error('❌ Error loading announcements:', error);
@@ -1601,10 +1806,10 @@ function searchAnnouncements(preservePage = false) {
     } else {
         clearBtn.classList.remove('visible');
         searchBadge.style.display = 'none';
-        filteredAnnouncements = allAnnouncements;
         if (!preservePage) {
-    currentPage = 1;
-}
+            currentPage = 1;
+        }
+        applyFiltersAndSort();
         displayAnnouncements(filteredAnnouncements);
         updatePagination();
         return;
@@ -1612,22 +1817,12 @@ function searchAnnouncements(preservePage = false) {
     
     console.log('🔍 Searching for:', searchTerm);
     
-    // MODIFIED PART IS HERE
-    filteredAnnouncements = allAnnouncements.filter(announcement => {
-        const userName = announcement.members?.full_name || announcement.posted_by || '';
-        // ADD THIS LINE: Create a searchable date string
-        const formattedDate = formatDate(announcement.scheduled_date).toLowerCase();
-
-        return (
-            (announcement.title && announcement.title.toLowerCase().includes(searchTerm)) ||
-            (announcement.description && announcement.description.toLowerCase().includes(searchTerm)) ||
-            (announcement.category && announcement.category.toLowerCase().includes(searchTerm)) ||
-            (announcement.target_audience && announcement.target_audience.toLowerCase().includes(searchTerm)) ||
-            (userName && userName.toLowerCase().includes(searchTerm)) ||
-            // ADD THIS CONDITION: Check if the formatted date includes the search term
-            (formattedDate && formattedDate.includes(searchTerm))
-        );
-    });
+    if (!preservePage) {
+        currentPage = 1;
+    }
+    
+    // Apply filters and sorting (includes search)
+    applyFiltersAndSort();
     
     console.log(`📊 Found ${filteredAnnouncements.length} results`);
     
@@ -1638,9 +1833,6 @@ function searchAnnouncements(preservePage = false) {
         searchBadge.style.display = 'none';
     }
     
-    if (!preservePage) {
-    currentPage = 1;
-}
     displayAnnouncements(filteredAnnouncements, searchTerm);
     updatePagination();
 }
@@ -1650,8 +1842,8 @@ function searchAnnouncements(preservePage = false) {
         document.getElementById('clearSearch').classList.remove('visible');
         document.getElementById('searchBadge').style.display = 'none';
         currentSearchTerm = '';
-        filteredAnnouncements = allAnnouncements;
         currentPage = 1;
+        applyFiltersAndSort(); // Apply current filters and sort order
         displayAnnouncements(filteredAnnouncements);
         updatePagination();
         console.log('🧹 Search cleared');
@@ -1898,5 +2090,4 @@ function searchAnnouncements(preservePage = false) {
     </script>
 </body>
 </html>
-
 

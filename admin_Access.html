@@ -904,7 +904,7 @@
         let currentPage = 1;
         const itemsPerPage = 10;
         let currentSearchTerm = ''; 
-        let currentSort = { column: 'created_at', ascending: false }; 
+        let currentSort = { column: 'posted_at', ascending: false }; 
         let charts = {};
         let showingArchived = false; 
         const archivableTables = ['members', 'announcements', 'notifications']; 
@@ -997,7 +997,7 @@
             showingArchived = false; 
             currentSearchTerm = ''; 
             document.getElementById('tableSearchInput').value = ''; 
-            currentSort = { column: 'created_at', ascending: false }; 
+            currentSort = { column: 'posted_at', ascending: false }; 
 
             if (tableName === 'dashboard') {
                 showDashboard();
@@ -1016,6 +1016,98 @@
             if (window.innerWidth < 1024) {
                 document.getElementById('sidebar').classList.remove('active');
                 document.getElementById('mobileOverlay').classList.remove('active');
+            }
+        }
+
+        // Get announcement metrics by time range
+        async function getAnnouncementMetricsByTimeRange(timeRange = '1year') {
+            try {
+                const now = new Date();
+                let startDate, labels, dataPoints;
+                
+                if (timeRange === '7days') {
+                    // Last 7 days
+                    startDate = new Date(now);
+                    startDate.setDate(now.getDate() - 6);
+                    startDate.setHours(0, 0, 0, 0);
+                    
+                    labels = [];
+                    dataPoints = new Array(7).fill(0);
+                    
+                    // Generate labels for last 7 days
+                    for (let i = 0; i < 7; i++) {
+                        const date = new Date(startDate);
+                        date.setDate(startDate.getDate() + i);
+                        labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                    }
+                    
+                } else if (timeRange === '1month') {
+                    // Last 30 days grouped by week
+                    startDate = new Date(now);
+                    startDate.setDate(now.getDate() - 29);
+                    startDate.setHours(0, 0, 0, 0);
+                    
+                    labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+                    dataPoints = new Array(4).fill(0);
+                    
+                } else {
+                    // Last 12 months (1 year)
+                    const currentYear = new Date().getFullYear();
+                    startDate = new Date(`${currentYear}-01-01`);
+                    
+                    labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    dataPoints = new Array(12).fill(0);
+                }
+                
+                // Query announcements
+                const { data, error } = await supabase
+                    .from('announcements')
+                    .select('posted_at')
+                    .eq('archived', false)
+                    .gte('posted_at', startDate.toISOString());
+                
+                if (error) throw error;
+                
+                // Group data based on time range
+                if (data) {
+                    data.forEach(announcement => {
+                        const createdDate = new Date(announcement.posted_at);
+                        
+                        if (timeRange === '7days') {
+                            const daysDiff = Math.floor((createdDate - startDate) / (1000 * 60 * 60 * 24));
+                            if (daysDiff >= 0 && daysDiff < 7) {
+                                dataPoints[daysDiff]++;
+                            }
+                        } else if (timeRange === '1month') {
+                            const daysDiff = Math.floor((createdDate - startDate) / (1000 * 60 * 60 * 24));
+                            const weekIndex = Math.floor(daysDiff / 7);
+                            if (weekIndex >= 0 && weekIndex < 4) {
+                                dataPoints[weekIndex]++;
+                            }
+                        } else {
+                            const month = createdDate.getMonth();
+                            dataPoints[month]++;
+                        }
+                    });
+                }
+                
+                return { labels, data: dataPoints };
+            } catch (error) {
+                console.error('Error fetching announcement metrics:', error);
+                return { labels: [], data: [] };
+            }
+        }
+
+        // Update announcement chart based on selected time range
+        async function updateAnnouncementChart() {
+            const timeRange = document.getElementById('timeRangeSelector').value;
+            const metricsData = await getAnnouncementMetricsByTimeRange(timeRange);
+            
+            if (charts.announcementMetrics) {
+                charts.announcementMetrics.data.labels = metricsData.labels;
+                charts.announcementMetrics.data.datasets[0].data = metricsData.data;
+                charts.announcementMetrics.data.datasets[1].data = metricsData.data;
+                charts.announcementMetrics.update();
             }
         }
 
@@ -1074,6 +1166,21 @@
                     <div class="info-card">
                         <h3 class="text-lg font-bold text-gray-800 mb-4">Records Overview</h3>
                         <div class="chart-container"><canvas id="barChart"></canvas></div>
+                    </div>
+                </div>
+                <div class="info-card mb-8">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+                        <h3 class="text-lg font-bold text-gray-800">
+                            <i class="fas fa-chart-line mr-2" style="color: #9FE870;"></i> Announcement Activity
+                        </h3>
+                        <select id="timeRangeSelector" onchange="updateAnnouncementChart()" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-sm font-medium" style="background-color: #FFFFFF; color: #333;">
+                            <option value="7days">Last 7 Days</option>
+                            <option value="1month">Last Month</option>
+                            <option value="1year" selected>Last Year</option>
+                        </select>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="announcementMetricsChart"></canvas>
                     </div>
                 </div>
                 <div class="info-card">
@@ -1157,6 +1264,76 @@
                     }
                 });
             }
+
+            // Create Announcement Metrics Chart
+            const announcementMetricsCtx = document.getElementById('announcementMetricsChart');
+            if (announcementMetricsCtx) {
+                const timeRange = document.getElementById('timeRangeSelector')?.value || '1year';
+                const metricsData = await getAnnouncementMetricsByTimeRange(timeRange);
+                charts.announcementMetrics = new Chart(announcementMetricsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: metricsData.labels,
+                        datasets: [
+                            {
+                                type: 'bar',
+                                label: 'Announcements Posted',
+                                data: metricsData.data,
+                                backgroundColor: 'rgba(34, 211, 238, 0.8)',
+                                borderColor: '#22D3EE',
+                                borderWidth: 0,
+                                borderRadius: 4,
+                                barThickness: 'flex',
+                                maxBarThickness: 40,
+                                order: 2
+                            },
+                            {
+                                type: 'line',
+                                label: 'Cumulative Trend',
+                                data: metricsData.data,
+                                borderColor: '#F472B6',
+                                backgroundColor: 'rgba(244, 114, 182, 0.1)',
+                                borderWidth: 3,
+                                fill: false,
+                                tension: 0.3,
+                                pointRadius: 0,
+                                pointHoverRadius: 5,
+                                pointHoverBackgroundColor: '#F472B6',
+                                pointHoverBorderColor: '#FFFFFF',
+                                pointHoverBorderWidth: 2,
+                                order: 1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        scales: chartThemeOptions.scales,
+                        plugins: {
+                            legend: chartThemeOptions.plugins.legend,
+                            tooltip: {
+                                backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                                titleColor: '#FFFFFF',
+                                bodyColor: '#FFFFFF',
+                                borderColor: '#22D3EE',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: true,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.dataset.label || '';
+                                        return `${label}: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         // Show section
@@ -1166,7 +1343,7 @@
             showingArchived = false; 
             currentSearchTerm = ''; 
             document.getElementById('tableSearchInput').value = ''; 
-            currentSort = { column: 'created_at', ascending: false }; 
+            currentSort = { column: 'posted_at', ascending: false }; 
 
             document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
             
@@ -1221,14 +1398,14 @@
             renderTable(); 
         }
 
-        // Function to toggle sort by created_at
+        // Function to toggle sort by posted_at
         function toggleDateSort() {
-            if (currentSort.column === 'created_at') {
+            if (currentSort.column === 'posted_at') {
                 // Already sorting by date, just flip direction
                 currentSort.ascending = !currentSort.ascending;
             } else {
                 // Was sorting by something else, switch to date (default Newest)
-                currentSort.column = 'created_at';
+                currentSort.column = 'posted_at';
                 currentSort.ascending = false;
             }
             currentPage = 1;
@@ -1362,12 +1539,12 @@
             // --- Add Sort Button ---
             let headers = [];
             if (currentData.length > 0) { headers = Object.keys(currentData[0]); }
-            const hasCreatedAt = headers.includes('created_at');
+            const hasCreatedAt = headers.includes('posted_at');
 
             if (hasCreatedAt) {
                 let sortIconClass = 'fas fa-filter'; // Default icon
                 let sortText = 'Sort by Date';
-                if (currentSort.column === 'created_at') {
+                if (currentSort.column === 'posted_at') {
                     // Use arrows to show direction
                     sortIconClass = currentSort.ascending ? 'fas fa-arrow-up-short-wide' : 'fas fa-arrow-down-short-wide';
                     sortText = currentSort.ascending ? 'Oldest First' : 'Newest First';
@@ -1410,10 +1587,10 @@
             if (headers.length > 0) {
                 // For announcements table, only show specific columns
                 if (currentTable === 'announcements') {
-                    const announcementColumns = ['id', 'title', 'created_at'];
+                    const announcementColumns = ['id', 'title', 'posted_at'];
                     announcementColumns.forEach(key => {
                         const isIdCol = key === 'id';
-                        const displayName = key === 'created_at' ? 'POSTED DATE' : key.toUpperCase().replace('_', ' ');
+                        const displayName = key === 'posted_at' ? 'POSTED DATE' : key.toUpperCase().replace('_', ' ');
                         tableHTML += `
                             <th class="px-4 py-3 text-left sortable ${isIdCol ? 'col-id' : ''}" onclick="handleSort('${key}')" title="Sort by ${key}">
                                 <div class="flex items-center">
@@ -1476,13 +1653,13 @@
 
                     // For announcements table, only show specific columns
                     if (currentTable === 'announcements') {
-                        const announcementColumns = ['id', 'title', 'created_at'];
+                        const announcementColumns = ['id', 'title', 'posted_at'];
                         announcementColumns.forEach(key => {
                             const value = row[key];
                             let displayValue = value !== null ? String(value) : '';
                             
-                            // Format date for created_at
-                            if (key === 'created_at' && value) {
+                            // Format date for posted_at
+                            if (key === 'posted_at' && value) {
                                 const date = new Date(value);
                                 displayValue = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                             }
@@ -1784,20 +1961,20 @@
             if (currentData.length > 0) {
                 sampleKeys = Object.keys(currentData[0]);
             } else if (currentTable === 'members') {
-                sampleKeys = ['id', 'name', 'email', 'password', 'created_at', 'archived', 'archived_at']; 
+                sampleKeys = ['id', 'name', 'email', 'password', 'posted_at', 'archived', 'archived_at']; 
             } else if (currentTable === 'admins') {
-                sampleKeys = ['id', 'username', 'password', 'created_at']; 
+                sampleKeys = ['id', 'username', 'password', 'posted_at']; 
             } else if (currentTable === 'announcements') {
-                sampleKeys = ['id', 'title', 'content', 'created_at', 'archived', 'archived_at']; 
+                sampleKeys = ['id', 'title', 'content', 'posted_at', 'archived', 'archived_at']; 
             } else if (currentTable === 'notifications') {
-                sampleKeys = ['id', 'message', 'target_user_id', 'created_at', 'archived', 'archived_at']; 
+                sampleKeys = ['id', 'message', 'target_user_id', 'posted_at', 'archived', 'archived_at']; 
             }
             
 
             if (sampleKeys.length > 0) {
                 sampleKeys.forEach(key => {
                     // MODIFIED: Hide internal columns
-                    if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'created_at') { 
+                    if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'posted_at') { 
                         const isTextArea = key === 'content' || key === 'message' || key === 'description' || key === 'summary' || key === 'why';
                         const isPassword = key.toLowerCase().includes('password');
                         
@@ -1867,7 +2044,7 @@
 
             Object.entries(row).forEach(([key, value]) => {
                 // MODIFIED: Hide internal columns
-                if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'created_at') {
+                if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'posted_at') {
                     const isTextArea = key === 'content' || key === 'message' || key === 'description' || key === 'summary' || key === 'why';
                     const isPassword = key.toLowerCase().includes('password');
                     const safeValue = value !== null ? String(value).replace(/"/g, '&quot;') : '';
@@ -1963,7 +2140,7 @@
                     data.archived_at = null; 
                 }
                 
-                data.created_at = new Date().toISOString();
+                data.posted_at = new Date().toISOString();
                 // REMOVED last_modified
 
                 const { error } = await supabase.from(currentTable).insert([data]);

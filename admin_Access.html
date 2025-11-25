@@ -803,6 +803,31 @@
             color: #9FE870;
         }
 
+        /* Modal tabs */
+        .modal-tab {
+            color: #666;
+            border-bottom-color: transparent;
+        }
+        .modal-tab:hover {
+            color: #333;
+            border-bottom-color: #E0E0E0;
+        }
+        .modal-tab.active {
+            color: #000;
+            border-bottom-color: #9FE870;
+        }
+        .dark .modal-tab {
+            color: #AAAAAA;
+        }
+        .dark .modal-tab:hover {
+            color: #F5F5F5;
+            border-bottom-color: #333;
+        }
+        .dark .modal-tab.active {
+            color: #9FE870;
+            border-bottom-color: #9FE870;
+        }
+
         /* Filter tag buttons */
         .filter-section {
             background-color: #F5F5F5;
@@ -961,6 +986,19 @@
                 <h3 id="modalTitle" class="text-2xl font-bold text-gray-800"></h3>
                 <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-3xl leading-none">&times;</button>
             </div>
+            
+            <!-- Tab Navigation (only shown when adding new records) -->
+            <div id="modalTabs" class="hidden mb-6 border-b border-gray-200 dark:border-gray-700">
+                <nav class="flex gap-4">
+                    <button type="button" onclick="switchModalTab('members')" id="tabMembers" class="modal-tab active pb-3 px-4 font-semibold text-sm transition-colors border-b-2">
+                        <i class="fas fa-users mr-2"></i>Add Member
+                    </button>
+                    <button type="button" onclick="switchModalTab('admins')" id="tabAdmins" class="modal-tab pb-3 px-4 font-semibold text-sm transition-colors border-b-2">
+                        <i class="fas fa-user-shield mr-2"></i>Add Admin
+                    </button>
+                </nav>
+            </div>
+            
             <form id="modalForm" class="space-y-4">
                 </form>
         </div>
@@ -2626,7 +2664,22 @@
 
         // Open add modal
         function openAddModal() {
-            document.getElementById('modalTitle').textContent = `Add New ${currentTable.replace('_', ' ')}`;
+            // Show tabs only for members/admins
+            if (currentTable === 'members' || currentTable === 'admins') {
+                document.getElementById('modalTabs').classList.remove('hidden');
+                currentModalTab = currentTable;
+                switchModalTab(currentTable);
+            } else {
+                document.getElementById('modalTabs').classList.add('hidden');
+                document.getElementById('modalTitle').textContent = `Add New ${currentTable.replace('_', ' ')}`;
+                buildOriginalForm();
+            }
+            
+            document.getElementById('modal').classList.add('active');
+        }
+        
+        // Build original form for non-member/admin tables
+        function buildOriginalForm() {
             const form = document.getElementById('modalForm');
             form.innerHTML = '';
 
@@ -2647,14 +2700,46 @@
             if (sampleKeys.length > 0) {
                 sampleKeys.forEach(key => {
                     // MODIFIED: Hide internal columns
-                    if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'posted_at') { 
+                    if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'posted_at' && key !== 'remember_me_preference' && key !== 'avatar_url') { 
                         const isTextArea = key === 'content' || key === 'message' || key === 'description' || key === 'summary' || key === 'why';
                         const isPassword = key.toLowerCase().includes('password');
+                        const isUserType = key === 'user_type';
+                        const isCreatedAt = key === 'created_at';
                         
-                        if (isTextArea) {
+                        if (isCreatedAt) {
+                            // Auto-fill created_at with current date/time (only for members table)
+                            if (currentTable === 'members') {
+                                const now = new Date().toISOString();
+                                form.innerHTML += `
+                                    <div>
+                                        <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                        <input type="text" 
+                                               name="${key}" 
+                                               value="${now}"
+                                               readonly
+                                               class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed">
+                                    </div>
+                                `;
+                            }
+                            // For other tables, skip created_at field
+                        } else if (isUserType) {
+                            // Dropdown for user_type
                             form.innerHTML += `
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                    <select name="${key}" 
+                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
+                                        <option value="">Select User Type</option>
+                                        <option value="Faculty">Faculty</option>
+                                        <option value="Officer">Officer</option>
+                                        <option value="Admin">Admin</option>
+                                    </select>
+                                </div>
+                            `;
+                        } else if (isTextArea) {
+                            form.innerHTML += `
+                                <div>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
                                     <textarea name="${key}" rows="8"
                                         class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-base"
                                         style="min-height: 200px;"></textarea>
@@ -2663,7 +2748,7 @@
                         } else if (isPassword) {
                             form.innerHTML += `
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
                                     <div class="password-input-container">
                                         <input type="password" 
                                                name="${key}" 
@@ -2676,7 +2761,7 @@
                         } else {
                             form.innerHTML += `
                                 <div>
-                                    <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                    <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
                                     <input type="${key.toLowerCase().includes('email') ? 'email' : 'text'}" 
                                            name="${key}" 
                                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
@@ -2702,7 +2787,6 @@
                 </div>
             `;
 
-            document.getElementById('modal').classList.add('active');
             validatePasswordLive('');
         }
 
@@ -2717,15 +2801,43 @@
 
             Object.entries(row).forEach(([key, value]) => {
                 // MODIFIED: Hide internal columns
-                if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'posted_at') {
+                if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'posted_at' && key !== 'remember_me_preference' && key !== 'avatar_url') {
                     const isTextArea = key === 'content' || key === 'message' || key === 'description' || key === 'summary' || key === 'why';
                     const isPassword = key.toLowerCase().includes('password');
+                    const isUserType = key === 'user_type';
+                    const isCreatedAt = key === 'created_at';
                     const safeValue = value !== null ? String(value).replace(/"/g, '&quot;') : '';
 
-                    if (isTextArea) {
+                    if (isCreatedAt) {
+                        // Show created_at as readonly
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <input type="text" 
+                                       name="${key}" 
+                                       value="${safeValue}"
+                                       readonly
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed">
+                            </div>
+                        `;
+                    } else if (isUserType) {
+                        // Dropdown for user_type with current value selected
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <select name="${key}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
+                                    <option value="">Select User Type</option>
+                                    <option value="Faculty" ${safeValue === 'Faculty' ? 'selected' : ''}>Faculty</option>
+                                    <option value="Officer" ${safeValue === 'Officer' ? 'selected' : ''}>Officer</option>
+                                    <option value="Admin" ${safeValue === 'Admin' ? 'selected' : ''}>Admin</option>
+                                </select>
+                            </div>
+                        `;
+                    } else if (isTextArea) {
                            form.innerHTML += `
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
                                 <textarea name="${key}" rows="8"
                                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent text-base"
                                     style="min-height: 200px;">${safeValue}</textarea>
@@ -2734,7 +2846,7 @@
                     } else if (isPassword) {
                         form.innerHTML += `
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
                                 <div class="password-input-container">
                                     <input type="password" 
                                            name="${key}" 
@@ -2748,7 +2860,7 @@
                     } else {
                         form.innerHTML += `
                             <div>
-                                <label class="block text-sm font-semibold text-gray-700 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
                                 <input type="${key.toLowerCase().includes('email') ? 'email' : 'text'}" 
                                        name="${key}" 
                                        value="${safeValue}"
@@ -2808,23 +2920,54 @@
                 }
                 // --- End Validation Logic ---
                 
+                // Remove created_at if it exists (it should be auto-generated or use posted_at)
+                if (data.created_at) {
+                    delete data.created_at;
+                }
+                
+                // Set timestamp fields BEFORE checking archivable tables
+                const currentTimestamp = new Date().toISOString();
+                
                 if (archivableTables.includes(currentTable)) {
                     data.archived = false;
                     data.archived_at = null; 
                 }
                 
-                data.posted_at = new Date().toISOString();
-                // REMOVED last_modified
+                // Set timestamps based on table structure
+                if (currentTable === 'members') {
+                    // Members table only has created_at, not posted_at
+                    data.created_at = currentTimestamp;
+                } else {
+                    // Other tables use posted_at
+                    data.posted_at = currentTimestamp;
+                }
+
+                console.log('Attempting to insert data:', data); // Debug log
 
                 const { error } = await supabase.from(currentTable).insert([data]);
-                if (error) throw error;
+                if (error) {
+                    console.error('Supabase error details:', error);
+                    throw error;
+                }
 
                 closeModal();
                 await loadTableData();
                 alert('Record added successfully!');
             } catch (error) {
                 console.error('Error saving:', error);
-                alert('Error saving record. Please try again.');
+                let errorMessage = 'Error saving record. Please try again.';
+                
+                if (error.message) {
+                    errorMessage += '\n\nDetails: ' + error.message;
+                }
+                if (error.details) {
+                    errorMessage += '\n' + error.details;
+                }
+                if (error.hint) {
+                    errorMessage += '\nHint: ' + error.hint;
+                }
+                
+                alert(errorMessage);
             }
         }
 
@@ -3098,9 +3241,203 @@
             document.getElementById('modal').classList.add('active');
         }
 
+        // Switch modal tab between members and admins
+        let currentModalTab = 'members';
+        
+        function switchModalTab(tabName) {
+            currentModalTab = tabName;
+            
+            // Update tab styling
+            document.getElementById('tabMembers').classList.toggle('active', tabName === 'members');
+            document.getElementById('tabAdmins').classList.toggle('active', tabName === 'admins');
+            
+            // Update modal title
+            document.getElementById('modalTitle').textContent = tabName === 'members' ? 'Add New Member' : 'Add New Admin';
+            
+            // Rebuild the form for the selected table
+            buildAddForm(tabName);
+        }
+        
+        // Build form for adding new records
+        function buildAddForm(tableName) {
+            const form = document.getElementById('modalForm');
+            form.innerHTML = '';
+
+            let sampleKeys = [];
+            if (tableName === 'members') {
+                sampleKeys = ['created_at', 'full_name', 'user_type', 'email', 'password'];
+            } else if (tableName === 'admins') {
+                sampleKeys = ['created_at', 'email', 'password'];
+            }
+
+            sampleKeys.forEach(key => {
+                // Hide internal columns
+                if (key !== 'id' && key !== 'archived' && key !== 'archived_at' && key !== 'posted_at' && key !== 'remember_me_preference' && key !== 'avatar_url') {
+                    const isPassword = key.toLowerCase().includes('password');
+                    const isUserType = key === 'user_type';
+                    const isCreatedAt = key === 'created_at';
+                    
+                    if (isCreatedAt) {
+                        // Auto-fill created_at with current date/time
+                        const now = new Date().toISOString();
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <input type="text" 
+                                       name="${key}" 
+                                       value="${now}"
+                                       readonly
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed">
+                            </div>
+                        `;
+                    } else if (isUserType) {
+                        // Dropdown for user_type
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <select name="${key}" 
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
+                                    <option value="">Select User Type</option>
+                                    <option value="Faculty">Faculty</option>
+                                    <option value="Officer">Officer</option>
+                                    <option value="Admin">Admin</option>
+                                </select>
+                            </div>
+                        `;
+                    } else if (isPassword) {
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <div class="password-input-container">
+                                    <input type="password" 
+                                           name="${key}" 
+                                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent pr-10"
+                                           oninput="validatePasswordLive(this.value)">
+                                    <i class="fas fa-eye password-input-toggle" onclick="togglePasswordVisibility(this)"></i>
+                                </div>
+                            </div>
+                        `;
+                        form.innerHTML += getPasswordRequirementsHTML();
+                    } else {
+                        form.innerHTML += `
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2 capitalize">${key.replace('_', ' ')}</label>
+                                <input type="${key.toLowerCase().includes('email') ? 'email' : 'text'}" 
+                                       name="${key}" 
+                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:border-transparent">
+                            </div>
+                        `;
+                    }
+                }
+            });
+
+            form.innerHTML += `
+                <div class="flex gap-3 pt-4">
+                    <button type="button" onclick="saveNewFromTab()" class="flex-1 px-6 py-3 rounded-lg font-semibold transition-colors" style="background-color: #9FE870; color: #000;">
+                        Save
+                    </button>
+                    <button type="button" onclick="closeModal()" class="flex-1 bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            `;
+
+            validatePasswordLive('');
+        }
+        
+        // Save new entry from tab modal
+        async function saveNewFromTab() {
+            try {
+                const form = document.getElementById('modalForm');
+                const formData = new FormData(form);
+                const data = {};
+                
+                formData.forEach((value, key) => data[key] = value);
+                
+                // Validation
+                for (const key in data) {
+                    const value = data[key];
+
+                    if (key.toLowerCase().includes('password')) {
+                        const passwordErrors = validatePassword(value);
+                        if (passwordErrors.length > 0) {
+                            alert('Password is not valid:\n\n' + passwordErrors.join('\n'));
+                            return;
+                        }
+                    } else if (currentModalTab !== 'members') {
+                        if (String(value).trim() === '') {
+                            alert(`Error: The '${key}' field cannot be blank.`);
+                            return;
+                        }
+                    }
+                }
+                
+                // Remove created_at if it exists
+                if (data.created_at) {
+                    delete data.created_at;
+                }
+                
+                const currentTimestamp = new Date().toISOString();
+                
+                // Set timestamps and archive fields based on table structure
+                if (currentModalTab === 'members') {
+                    data.created_at = currentTimestamp;
+                    if (archivableTables.includes(currentModalTab)) {
+                        data.archived = false;
+                        data.archived_at = null;
+                    }
+                } else if (currentModalTab === 'admins') {
+                    // Admins table uses created_at and is_archived
+                    data.created_at = currentTimestamp;
+                    data.is_archived = false;
+                    data.remember_me_preference = true; // Default value
+                } else {
+                    // Other tables use posted_at
+                    data.posted_at = currentTimestamp;
+                    if (archivableTables.includes(currentModalTab)) {
+                        data.archived = false;
+                        data.archived_at = null;
+                    }
+                }
+
+                console.log('Attempting to insert data into', currentModalTab, ':', data);
+
+                const { error } = await supabase.from(currentModalTab).insert([data]);
+                if (error) {
+                    console.error('Supabase error details:', error);
+                    throw error;
+                }
+
+                closeModal();
+                
+                // Reload the appropriate table
+                if (currentTable === currentModalTab) {
+                    await loadTableData();
+                }
+                
+                alert(`${currentModalTab === 'members' ? 'Member' : 'Admin'} added successfully!`);
+            } catch (error) {
+                console.error('Error saving:', error);
+                let errorMessage = 'Error saving record. Please try again.';
+                
+                if (error.message) {
+                    errorMessage += '\n\nDetails: ' + error.message;
+                }
+                if (error.details) {
+                    errorMessage += '\n' + error.details;
+                }
+                if (error.hint) {
+                    errorMessage += '\nHint: ' + error.hint;
+                }
+                
+                alert(errorMessage);
+            }
+        }
+
         // Close modal
         function closeModal() {
             document.getElementById('modal').classList.remove('active');
+            document.getElementById('modalTabs').classList.add('hidden');
         }
 
         // Logout

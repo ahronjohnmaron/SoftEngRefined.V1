@@ -1014,7 +1014,7 @@
         let currentTable = 'dashboard';
         let currentData = []; 
         let currentPage = 1;
-        const itemsPerPage = 10;
+        let itemsPerPage = 10;
         let currentSearchTerm = ''; 
         let currentSort = { column: 'posted_at', ascending: false }; 
         let charts = {};
@@ -2482,20 +2482,38 @@
 
             tableHTML += `</tbody></table></div>`;
 
-            // Pagination
+            // Pagination and rows per page controls
+            tableHTML += `
+                <div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="flex items-center gap-2">
+                        <label for="rowsPerPage" class="text-sm font-medium text-gray-700 dark:text-gray-300">Rows per page:</label>
+                        <select id="rowsPerPage" onchange="changeRowsPerPage(this.value)" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:border-transparent bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                            <option value="5" ${itemsPerPage === 5 ? 'selected' : ''}>5</option>
+                            <option value="10" ${itemsPerPage === 10 ? 'selected' : ''}>10</option>
+                            <option value="15" ${itemsPerPage === 15 ? 'selected' : ''}>15</option>
+                            <option value="20" ${itemsPerPage === 20 ? 'selected' : ''}>20</option>
+                            <option value="50" ${itemsPerPage === 50 ? 'selected' : ''}>50</option>
+                            <option value="${totalItems}" ${itemsPerPage === totalItems ? 'selected' : ''}>All</option>
+                        </select>
+                        <span class="text-sm text-gray-600 dark:text-gray-400">Showing ${startIndex + 1}-${Math.min(endIndex, totalItems)} of ${totalItems}</span>
+                    </div>
+            `;
+            
             if (totalPages > 1) {
                 tableHTML += `
-                    <div class="mt-6 flex justify-center items-center gap-2 flex-wrap">
-                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                    <div class="flex justify-center items-center gap-2 flex-wrap">
+                        <button onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                             <i class="fas fa-chevron-left"></i>
                         </button>
-                        <span class="px-4 py-2 text-gray-700 font-semibold">Page ${currentPage} of ${totalPages}</span>
-                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <span class="px-4 py-2 text-gray-700 dark:text-gray-300 font-semibold">Page ${currentPage} of ${totalPages}</span>
+                        <button onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
                             <i class="fas fa-chevron-right"></i>
                         </button>
                     </div>
                 `;
             }
+            
+            tableHTML += `</div>`;
 
         
             tableHTML += '</div>';
@@ -2585,6 +2603,13 @@
             
             currentPage = page;
             renderTable(); 
+        }
+
+        // Change rows per page
+        function changeRowsPerPage(value) {
+            itemsPerPage = parseInt(value);
+            currentPage = 1; // Reset to first page when changing rows per page
+            renderTable();
         }
 
         // --- NEW: Password Validation Function ---

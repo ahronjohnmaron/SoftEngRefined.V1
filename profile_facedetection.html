@@ -309,6 +309,12 @@
     .crop-btn.cancel:hover {
       background: #4d4d4d;
     }
+    .crop-btn.retry {
+      background: #ff9800;
+    }
+    .crop-btn.retry:hover {
+      background: #f57c00;
+    }
     .back-btn {
       position: absolute;
       top: 20px;
@@ -376,7 +382,10 @@
       <h3>⚠️ No Face Detected</h3>
       <p>No face detected in uploaded image. Please upload a clear photo of your face.</p>
       <img id="errorImage" class="error-image" alt="Rejected image"/>
-      <button class="error-btn" onclick="closeErrorModal()">Try Again</button>
+      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+        <button class="error-btn" onclick="closeErrorModal()">Try Again</button>
+        <button class="error-btn" onclick="retryFromError()" style="background: #ff9800; color: #1a1a1a;">🔄 Retry Camera</button>
+      </div>
     </div>
   </div>
 
@@ -389,6 +398,7 @@
       </div>
       <div class="crop-buttons">
         <button class="crop-btn cancel" onclick="cancelCrop()">Cancel</button>
+        <button class="crop-btn retry" onclick="retryCameraCapture()">🔄 Retry</button>
         <button class="crop-btn" onclick="applyCrop()">Apply</button>
       </div>
     </div>
@@ -569,6 +579,26 @@
       document.getElementById('errorModal').style.display = 'none';
     }
 
+    window.retryFromError = async function() {
+      // Close error modal
+      document.getElementById('errorModal').style.display = 'none';
+      
+      // Open camera for retry
+      await loadFaceApiModels();
+      document.getElementById('cameraArea').style.display = '';
+      document.getElementById('cameraBtn').style.display = 'none';
+      
+      try {
+        if (!stream) {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const video = document.getElementById('cameraPreview');
+          video.srcObject = stream;
+        }
+      } catch (err) {
+        alert('Unable to access camera: ' + err.message);
+      }
+    }
+
     function showCropModal(imageUrl) {
       const canvas = document.getElementById('cropCanvas');
       const ctx = canvas.getContext('2d');
@@ -668,6 +698,28 @@
     window.cancelCrop = function() {
       document.getElementById('cropModal').style.display = 'none';
       cropImageData = null;
+    }
+
+    window.retryCameraCapture = async function() {
+      // Close crop modal
+      document.getElementById('cropModal').style.display = 'none';
+      cropImageData = null;
+      
+      // Reopen camera
+      await loadFaceApiModels();
+      document.getElementById('cameraArea').style.display = '';
+      document.getElementById('cameraBtn').style.display = 'none';
+      
+      try {
+        // If stream already exists, reuse it; otherwise create new stream
+        if (!stream) {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          const video = document.getElementById('cameraPreview');
+          video.srcObject = stream;
+        }
+      } catch (err) {
+        alert('Unable to access camera: ' + err.message);
+      }
     }
 
     window.applyCrop = async function() {

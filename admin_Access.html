@@ -1005,10 +1005,13 @@
     </div>
 
     <script>
-        // Initialize Supabase
+        // Replace your current Supabase init with this:
+if (typeof supabase === 'undefined') {
         const SUPABASE_URL = 'https://dqtictujkhxultwoaqaw.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdGljdHVqa2h4dWx0d29hcWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTU1MjksImV4cCI6MjA3Mzg3MTUyOX0.DsnJZ9ylCBlTeVp_KdgRq71cV0f7MojOfuWg1MVGS5I';
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
 
         // Global variables
         let currentTable = 'dashboard';
@@ -3652,3 +3655,4 @@
     </script>
 </body>
 </html>
+

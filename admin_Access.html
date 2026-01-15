@@ -1005,12 +1005,19 @@
     </div>
 
     <script>
-        // Replace your current Supabase init with this:
-if (typeof supabase === 'undefined') {
-        const SUPABASE_URL = 'https://dqtictujkhxultwoaqaw.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdGljdHVqa2h4dWx0d29hcWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTU1MjksImV4cCI6MjA3Mzg3MTUyOX0.DsnJZ9ylCBlTeVp_KdgRq71cV0f7MojOfuWg1MVGS5I';
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    window.supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      // --- CORRECTED SUPABASE INITIALIZATION ---
+const SUPABASE_URL = 'https://dqtictujkhxultwoaqaw.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRxdGljdHVqa2h4dWx0d29hcWF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyOTU1MjksImV4cCI6MjA3Mzg3MTUyOX0.DsnJZ9ylCBlTeVp_KdgRq71cV0f7MojOfuWg1MVGS5I';
+
+// 1. We check for 'window.sbClient' to avoid re-initialization errors.
+if (!window.sbClient) {
+    window.sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+}
+
+// 2. We use 'var' to overwrite the library name 'supabase' with our active client instance.
+// This allows all your existing functions like supabase.from() to work correctly.
+var supabase = window.sbClient;
+// ------------------------------------------
 }
 
         // Global variables
@@ -3655,4 +3662,5 @@ if (typeof supabase === 'undefined') {
     </script>
 </body>
 </html>
+
 
